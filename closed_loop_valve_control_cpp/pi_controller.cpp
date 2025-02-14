@@ -11,7 +11,7 @@ double PI_Controller::compute(double input_error, double time_delta, double *err
 }
 
 namespace ClosedLoopControllers {
-PI_Controller Chamber_Pressure_Controller(0, 1); // TODO RJN CL - PID constants
+PI_Controller Chamber_Pressure_Controller(0, 0.01); // TODO RJN CL - PID constants
 PI_Controller LOX_Angle_Controller(0, 0);
 PI_Controller IPA_Angle_Controller(0, 0);
 } // namespace ClosedLoopControllers
