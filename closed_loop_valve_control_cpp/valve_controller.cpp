@@ -9,7 +9,7 @@
 #define GRAVITY_FT_S 32.1740             // Gravity in (ft / s^2)
 #define GRAVITY_IN_S (GRAVITY_FT_S * 12) // Gravity in (in / s^2)
 
-#define DEFAULT_CHAMBER_PRESSURE 100 // psi
+#define DEFAULT_CHAMBER_PRESSURE 250 // psi
 
 #define cav_vent_ox_AREA_OF_THROAT 0.00989 // in^2 #-200 deg C
 #define cav_vent_ox_CD 0.975               // unitless
@@ -143,14 +143,16 @@ double valve_angle(double cv) {
   return clamped_table_interplolation(cv, valve_angle_table, VALVE_ANGLE_TABLE_LEN);
 }
 
-void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double *angle_ox, double *angle_fuel) {
+void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
+                                double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum,
+                                double *angle_ox, double *angle_fuel) {
   // ol_ for open loop computations
   // err_ for err between ol and sensor
   // col_ for closed loop computation
 
   double ol_chamber_pressure = chamber_pressure(thrust);
-  double err_chamber_pressure = default_sensor_data.chamber_pressure - ol_chamber_pressure;
-  double cl_chamber_pressure = ol_chamber_pressure + ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure, time_delta);
+  double err_chamber_pressure = chamber_pressure_sensor - ol_chamber_pressure;
+  double cl_chamber_pressure = ol_chamber_pressure - ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure, time_delta, cp_err_sum);
 
   double ol_mass_flow_ox;
   double ol_mass_flow_fuel;
@@ -164,6 +166,6 @@ void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox,
   double ol_angle_ox = valve_angle(sub_critical_cv(ol_mass_flow_ox, default_sensor_data.ox_tank_pressure, ox_valve_downstream_pressure_goal, ox_from_temperature(default_sensor_data.ox_valve_temperature)));
   double ol_angle_fuel = valve_angle(sub_critical_cv(ol_mass_flow_fuel, default_sensor_data.ipa_tank_pressure, ipa_valve_downstream_pressure_goal, ipa_from_temperature(default_sensor_data.ipa_valve_temperature)));
 
-  *angle_ox = ol_angle_ox + ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta);
-  *angle_fuel = ol_angle_fuel + ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta);
+  *angle_ox = ol_angle_ox - ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta, ox_err_sum);
+  *angle_fuel = ol_angle_fuel - ClosedLoopControllers::IPA_Angle_Controller.compute(err_mass_flow_fuel, time_delta, ipa_err_sum);
 }

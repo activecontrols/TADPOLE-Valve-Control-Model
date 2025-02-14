@@ -3,13 +3,12 @@
 
 class PI_Controller {
 public:
-  PI_Controller(double kp, double ki, double *err_sum);
-  double compute(double input_error, double time_delta);
+  PI_Controller(double kp, double ki);
+  double compute(double input_error, double time_delta, double *err_sum);
 
 private:
   double kp;
   double ki;
-  double *err_sum = 0;
 };
 
 namespace ClosedLoopControllers {

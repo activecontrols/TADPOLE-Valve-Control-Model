@@ -28,5 +28,7 @@ struct sensor_data {
   double ipa_cv_temperature;    // K
 };
 
-void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double *angle_ox, double *angle_fuel);
+void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
+                                double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum,
+                                double *angle_ox, double *angle_fuel);
 #endif
