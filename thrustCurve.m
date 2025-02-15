@@ -1,10 +1,15 @@
 function thrust = thrustCurve(time)
 
+CURVE_TIME = 20;
+SLOPE = 2;
+OFFSET = 6 * SLOPE;
+
+
 maxT = 550;
-if time < 10
-    thrust = maxT*(1 - 1 / (5/3 + exp(30 - 4*time)));
-elseif time < 20
-    thrust = maxT*(0.4 + 1 / (5/3 + exp(50 - 4*time)));
+if time < CURVE_TIME / 2
+    thrust = maxT*(1 - 1 / (5/3 + exp(OFFSET - SLOPE*time)));
+elseif time < CURVE_TIME
+    thrust = maxT*(1 - 1 / (5/3 + exp(OFFSET - SLOPE*(CURVE_TIME-time))));
 else
     thrust = maxT;
 
