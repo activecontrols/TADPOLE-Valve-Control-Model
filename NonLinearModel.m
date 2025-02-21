@@ -9,7 +9,7 @@ function xdot = NonLinearModel(x, angle_ox, angle_ipa, consts, simData, fuelData
 
     % Time constants
     tau_mdot = 0.11 / 4;
-    tau_pc = 1.5 / 4;
+    tau_pc = 1 / 4;
 
     % Nonlinear mass flow rates
     f_ox = oxangle2mdot(angle_ox, consts, simData, fuelData);
