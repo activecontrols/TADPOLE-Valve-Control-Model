@@ -53,15 +53,15 @@ double ipa_manifold_table[2][INTERPOLATION_TABLE_LENGTH] = {
 Sensor_Data default_sensor_data{
     100, // psi
     {
-        820,           // psi
-        0, // psi - not needed for OL
+        820, // psi
         0,   // psi - not needed for OL
-        90,      // Kelvin
-        90,        // Kelvin
+        0,   // psi - not needed for OL
+        90,  // Kelvin
+        90,  // Kelvin
     },
     {
-        820,           // psi
-        0, // psi - not needed for OL
+        820, // psi
+        0,   // psi - not needed for OL
         0,   // psi - not needed for OL
     }};
 
@@ -195,7 +195,7 @@ void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox,
   double ol_chamber_pressure = chamber_pressure(thrust);
   double err_chamber_pressure = chamber_pressure_sensor - ol_chamber_pressure;
   double ol_mdot_total = mass_flow_rate(ol_chamber_pressure);
-  double cl_mdot_total = ol_mdot_total - ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure, time_delta, ipa_err_sum);
+  double cl_mdot_total = ol_mdot_total - ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure, time_delta, cp_err_sum);
 
   double ol_mass_flow_ox;
   double ol_mass_flow_ipa;
@@ -210,6 +210,6 @@ void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox,
   double ol_angle_ox = valve_angle(sub_critical_cv(ol_mass_flow_ox, default_sensor_data.ox.tank_pressure, ox_valve_downstream_pressure_goal, ox_density_from_temperature(default_sensor_data.ox.valve_temperature)));
   double ol_angle_ipa = valve_angle(sub_critical_cv(ol_mass_flow_ipa, default_sensor_data.ipa.tank_pressure, ipa_valve_downstream_pressure_goal, ipa_density()));
 
-  *angle_ox = ol_angle_ox + ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta, ox_err_sum);
-  *angle_ipa = ol_angle_ipa + ClosedLoopControllers::IPA_Angle_Controller.compute(err_mass_flow_ipa, time_delta, ipa_err_sum);
+  *angle_ox = ol_angle_ox - ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta, ox_err_sum);
+  *angle_ipa = ol_angle_ipa - ClosedLoopControllers::IPA_Angle_Controller.compute(err_mass_flow_ipa, time_delta, ipa_err_sum);
 }

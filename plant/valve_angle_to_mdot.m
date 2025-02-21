@@ -11,6 +11,6 @@ function mdot = valve_angle_to_mdot(valve_angle, tank_pressure, manifold_pressur
 
     pressure_delta = tank_pressure - manifold_pressure;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0
-    cv = clamped_interpolation(valve_angle, cv_table)
+    cv = clamped_interpolation(valve_angle, cv_table);
     mdot = cv / IN3_TO_GAL / PER_SEC_TO_PER_MIN * sqrt(fluid_density * pressure_delta / LB_TO_TON / PER_IN3_TO_PER_M3);
 end
