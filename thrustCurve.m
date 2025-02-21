@@ -1,10 +1,7 @@
 function thrust = thrustCurve(time)
-CURVE_TIME = 20;
-SLOPE = 2;
-OFFSET = 6 * SLOPE;
 
 CURVE_TIME = 20;
-SLOPE = 2;
+SLOPE = 5;
 OFFSET = 6 * SLOPE;
 
 

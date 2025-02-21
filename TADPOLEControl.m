@@ -32,21 +32,22 @@ angle_ipa = 50;
 [t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, 0), tspan, x0);
 
 % Plots step response
-figure;
+figure(1);
+subplot(2,2,1)
 plot(t, x(:,1), 'b', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Oxidizer Flow (kg/s)');
 title('Step Response');
 grid on
 
-figure;
+subplot(2,2,2)
 plot(t, x(:,2), 'r', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Fuel Flow (kg/s)');
 title('Step Response');
 grid on
 
-figure;
+subplot(2,2,3)
 plot(t, x(:,3), 'k', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Chamber Pressure (Pa)');
@@ -66,7 +67,7 @@ for i = angles
 end
 
 %Display
-figure;
+subplot(2,2,4)
 plot(angles, mdot_ox, 'g', 'LineWidth', 2);
 hold on
 plot(angles, mdot_ipa, 'r', 'LineWidth', 2);
@@ -74,6 +75,6 @@ xlabel('Valve Angle [deg]');
 ylabel('Mass Flow');
 title('Mass Flow vs. Valve Angle');
 xlim([0 90]);
-legend('Mass Flow Oxidizer', 'Mass Flow IPA','Location','southeast')
+legend('Mass Flow Oxidizer', 'Mass Flow IPA','Location','northwest')
 grid on 
 hold off
