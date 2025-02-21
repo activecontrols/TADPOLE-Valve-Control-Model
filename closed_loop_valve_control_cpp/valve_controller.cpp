@@ -1,5 +1,5 @@
-#include <valve_controller.hpp>
-#include <pi_controller.hpp>
+#include "valve_controller.hpp"
+#include "pi_controller.hpp"
 #include <math.h>
 
 // #include <Router.h>
@@ -51,22 +51,22 @@ double ipa_manifold_table[2][INTERPOLATION_TABLE_LENGTH] = {
     {120.844, 130.535, 140.262, 150.16, 159.99, 170.243, 180.67, 191.054, 201.631, 212.408, 223.382, 234.368, 245.752, 257.017, 268.529, 280.3, 292.062, 304.129, 316.095, 328.466, 338.509}};
 
 Sensor_Data default_sensor_data{
-    .chamber_pressure = 100, // psi
-    .ox = {
-        .tank_pressure = 820,           // psi
-        .venturi_upstream_pressure = 0, // psi - not needed for OL
-        .venturi_throat_pressure = 0,   // psi - not needed for OL
-        .venturi_temperature = 90,      // Kelvin
-        .valve_temperature = 90,        // Kelvin
+    100, // psi
+    {
+        820,           // psi
+        0, // psi - not needed for OL
+        0,   // psi - not needed for OL
+        90,      // Kelvin
+        90,        // Kelvin
     },
-    .ipa = {
-        .tank_pressure = 820,           // psi
-        .venturi_upstream_pressure = 0, // psi - not needed for OL
-        .venturi_throat_pressure = 0,   // psi - not needed for OL
+    {
+        820,           // psi
+        0, // psi - not needed for OL
+        0,   // psi - not needed for OL
     }};
 
-Venturi ox_venturi{.inlet_area = 0.127, .throat_area = 0.0204, .cd = 0.8};  // in^2 for both
-Venturi ipa_venturi{.inlet_area = 0.127, .throat_area = 0.0204, .cd = 0.8}; // in^2 for both
+Venturi ox_venturi{0.127, 0.0204, 0.8};  // in^2 for both
+Venturi ipa_venturi{0.127, 0.0204, 0.8}; // in^2 for both
 
 // maps v from (min_in, max_in) to (min_out, max_out)
 double linear_interpolation(double v, double min_in, double max_in, double min_out, double max_out) {
@@ -186,29 +186,30 @@ double estimate_mass_flow(Fluid_Line fluid_line, Venturi venturi, double fluid_d
   return venturi.throat_area * sqrt(2 * fluid_density * pressure_delta / (1 - area_term)) * venturi.cd;
 }
 
-void closed_loop_thrust_control(double thrust, Sensor_Data sensor_data, double *angle_ox, double *angle_ipa) {
+void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
+                                double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum, double *angle_ox, double *angle_ipa) {
   // ol_ for open loop computations
   // err_ for err between ol and sensor
   // col_ for closed loop computation
 
   double ol_chamber_pressure = chamber_pressure(thrust);
-  double err_chamber_pressure = sensor_data.chamber_pressure - ol_chamber_pressure;
+  double err_chamber_pressure = chamber_pressure_sensor - ol_chamber_pressure;
   double ol_mdot_total = mass_flow_rate(ol_chamber_pressure);
-  double cl_mdot_total = ol_mdot_total - ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure);
+  double cl_mdot_total = ol_mdot_total - ClosedLoopControllers::Chamber_Pressure_Controller.compute(err_chamber_pressure, time_delta, ipa_err_sum);
 
   double ol_mass_flow_ox;
   double ol_mass_flow_ipa;
   mass_balance(cl_mdot_total, &ol_mass_flow_ox, &ol_mass_flow_ipa);
 
-  double err_mass_flow_ox = estimate_mass_flow(sensor_data.ox, ox_venturi, ox_density_from_temperature(sensor_data.ox.venturi_temperature)) - ol_mass_flow_ox;
-  double err_mass_flow_ipa = estimate_mass_flow(sensor_data.ipa, ipa_venturi, ipa_density()) - ol_mass_flow_ipa;
+  double err_mass_flow_ox = mfr_ox - ol_mass_flow_ox;
+  double err_mass_flow_ipa = mfr_ipa - ol_mass_flow_ipa;
 
   double ox_valve_downstream_pressure_goal = ox_manifold_pressure(thrust);
   double ipa_valve_downstream_pressure_goal = ipa_manifold_pressure(thrust);
 
-  double ol_angle_ox = valve_angle(sub_critical_cv(ol_mass_flow_ox, sensor_data.ox.tank_pressure, ox_valve_downstream_pressure_goal, ox_density_from_temperature(sensor_data.ox.valve_temperature)));
-  double ol_angle_ipa = valve_angle(sub_critical_cv(ol_mass_flow_ipa, sensor_data.ipa.tank_pressure, ipa_valve_downstream_pressure_goal, ipa_density()));
+  double ol_angle_ox = valve_angle(sub_critical_cv(ol_mass_flow_ox, default_sensor_data.ox.tank_pressure, ox_valve_downstream_pressure_goal, ox_density_from_temperature(default_sensor_data.ox.valve_temperature)));
+  double ol_angle_ipa = valve_angle(sub_critical_cv(ol_mass_flow_ipa, default_sensor_data.ipa.tank_pressure, ipa_valve_downstream_pressure_goal, ipa_density()));
 
-  *angle_ox = ol_angle_ox + ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox);
-  *angle_ipa = ol_angle_ipa + ClosedLoopControllers::IPA_Angle_Controller.compute(err_mass_flow_ipa);
+  *angle_ox = ol_angle_ox + ClosedLoopControllers::LOX_Angle_Controller.compute(err_mass_flow_ox, time_delta, ox_err_sum);
+  *angle_ipa = ol_angle_ipa + ClosedLoopControllers::IPA_Angle_Controller.compute(err_mass_flow_ipa, time_delta, ipa_err_sum);
 }

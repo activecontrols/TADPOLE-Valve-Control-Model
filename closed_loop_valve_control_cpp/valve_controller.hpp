@@ -30,5 +30,6 @@ struct Sensor_Data {
 
 void open_loop_thrust_control(double thrust, Sensor_Data sensor_data, double *angle_ox, double *angle_ipa);
 void open_loop_thrust_control_defaults(double thrust, double *angle_ox, double *angle_ipa);
-void closed_loop_thrust_control(double thrust, Sensor_Data sensor_data, double *angle_ox, double *angle_ipa);
+void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
+                                double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum, double *angle_ox, double *angle_ipa);
 #endif
