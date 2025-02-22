@@ -29,7 +29,7 @@ angle_ox = 90;
 angle_ipa = 90;
 
 % Simulate system
-[t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, 0), tspan, x0);
+[t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, 0, 0), tspan, x0);
 
 % Plots step response
 figure(1);
