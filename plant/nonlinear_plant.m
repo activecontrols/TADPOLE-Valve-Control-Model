@@ -1,4 +1,4 @@
-function xdot = nonlinear_plant(x, angle_ox, angle_ipa, prev_thrust)
+function xdot = nonlinear_plant(x, angle_ox, angle_ipa, prev_thrust, t)
     mdot_ox = x(1);
     mdot_ipa = x(2);
     Pc = x(3);
@@ -33,9 +33,9 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, prev_thrust)
 
     f_Pc = (mdot_ox + mdot_ipa) * tadpole_C_STAR / tadpole_AREA_OF_THROAT / GRAVITY_FT_S;
 
-    oxError = 1.12;
-    ipaError = 0.8;
-    PcError = 0.82;
+    oxError = 1 + 0.15*sin(1/2*t);
+    ipaError = 1 + 0.15*sin(1/3*t);
+    PcError = 1 + 0.1*sin(1/5*t);
 
     % Time constants
     tau_mdot = 0.11 / 4;
