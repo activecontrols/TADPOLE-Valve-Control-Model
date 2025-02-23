@@ -80,32 +80,46 @@ grid on
 hold off
 
 %Thrust curve
-timeSim = linspace(0,20,200);
-t_thrust = zeros(200,1);
-high_bound = zeros(200,1);
-low_bound = zeros(200,1);
-idx = 1;
+model = 'TADPOLE_Closed_Loop';
+load_system(model);
+out = sim(model);
 
-for time = timeSim
-    thrust = thrustCurve(time);
-    t_past = thrustCurve(time - 0.5);
-    t_future = thrustCurve(time + 0.5);
-    high_bound(idx) = max([thrust, t_past, t_future]) + 0.05 * 550;
-    low_bound(idx) = min([thrust, t_past, t_future]) - 0.05 * 550;
-    t_thrust(idx) = thrust;
-    idx = idx + 1;
-end
+%Thrust Data
+data = out.ThrustCurves.Data;
+timeSim = out.ThrustCurves.Time;
+high_bound = data(:,3);
+low_bound = data(:,2);
+t_thrust = data(:,1);
+cloop_thrust = data(:,4);
+
+%Mass Flow Ratio Data
+dataMFR = out.MFRData.Data;
+closedMFR = dataMFR(:,1);
+openMFR = dataMFR(:,2);
 
 figure(2);
-plot(timeSim, low_bound, 'b', 'LineWidth', 2);
+plot(timeSim, low_bound, 'b', 'LineWidth', 1);
 hold on
-plot(timeSim, t_thrust, 'g', 'LineWidth', 2);
-plot(timeSim, high_bound, 'r', 'LineWidth', 2);
+plot(timeSim, t_thrust, 'y', 'LineWidth', 1);
+plot(timeSim, high_bound, 'r', 'LineWidth', 1);
+plot(timeSim, cloop_thrust, 'g', 'LineWidth', 1);
 grid on
 xlim([0 20]);
-ylim([0 600]);
+ylim([0 700]);
 xlabel('Time [s]');
 ylabel('Target Thrust');
-title('Thrust Curve');
-legend('Low Bound', 'Target', 'High Bound','Location','southeast');
+title('Simulated Closed Loop Throttle Test');
+legend('Low Bound', 'Target', 'High Bound', 'Modeled Thrust','Location','southeast');
 hold off
+
+figure(3);
+plot(timeSim, closedMFR, 'g', 'LineWidth', 1);
+hold on
+plot(timeSim, openMFR, 'r', 'LineWidth', 1);
+grid on 
+xlim([0 20]);
+ylim([0.9 1.7]);
+xlabel('Time [s]');
+ylabel('Mass Flow Ratio')
+title('Simulated Mass Flow Ratio: Open Loop vs. Closed Loop')
+legend('Closed Loop', 'Open Loop')
