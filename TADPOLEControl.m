@@ -1,6 +1,7 @@
 %% Setup
 clear;
 clear mex; % resets values inside PID
+quick_compiler
 addpath('closed_loop_valve_control_cpp');
 addpath('plant')
 
@@ -13,11 +14,11 @@ noise_var_mdot = 5e-5;
 
 timeDelta = 1/100;
 
-%% TESTS 
+%% Graphs and tests 
 tspan = [0 2];
 
 % Define state vector and initials
-%x = [mdot_ox; mdot_ipa; Pc];
+%x = [mdot_ox; mdot_ipa; Pc]
 x0 = [0 0 0];
 
 % Time constants
