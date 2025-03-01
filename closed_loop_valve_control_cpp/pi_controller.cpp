@@ -11,7 +11,7 @@ double PI_Controller::compute(double input_error, double time_delta, double *err
 }
 
 namespace ClosedLoopControllers {
-PI_Controller Chamber_Pressure_Controller(0.0175, 0.03);
-PI_Controller LOX_Angle_Controller(0, 100);
-PI_Controller IPA_Angle_Controller(0, 100);
+PI_Controller Chamber_Pressure_Controller(1e-3, 9e-2);
+PI_Controller LOX_Angle_Controller(0, 85);
+PI_Controller IPA_Angle_Controller(0, 85);
 } // namespace ClosedLoopControllers

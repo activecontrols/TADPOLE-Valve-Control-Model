@@ -10,28 +10,41 @@ actuator_delay = 0.1131;
 noise_var_actuators = 0.1039 / 50;
 noise_var_outputs = 1;
 noise_var_mdot = 5e-5;
-%model_error = 0.9 + 0.2*rand;
+timeDelta = 1/500;
+notch_freq = 574;
+deadtime_Pc = 0.05;        %seconds
 
-timeDelta = 1/100;
+% Manifold pressure data for display tests
+ox_manifold_table = [
+    192.5, 210.556, 228.611, 246.667, 264.722, 282.778, 300.833, 318.889, 336.944, 355.0, 373.056, 391.111, 409.167, 427.222, 445.278, 463.333, 481.389, 499.444, 517.5, 535.556, 550.0;
+    118.055, 127.34, 136.64, 146.082, 155.44, 165.182, 175.069, 184.896, 194.888, 205.049, 215.378, 225.702, 236.381, 246.93, 257.695, 268.683, 279.647, 290.878, 301.999, 313.482, 322.79
+];
+
+ipa_manifold_table = [
+    192.5, 210.556, 228.611, 246.667, 264.722, 282.778, 300.833, 318.889, 336.944, 355.0, 373.056, 391.111, 409.167, 427.222, 445.278, 463.333, 481.389, 499.444, 517.5, 535.556, 550.0;
+    120.844, 130.535, 140.262, 150.16, 159.99, 170.243, 180.67, 191.054, 201.631, 212.408, 223.382, 234.368, 245.752, 257.017, 268.529, 280.3, 292.062, 304.129, 316.095, 328.466, 338.509
+];
+
+cf_table = [
+    220, 550;
+    1.12, 1.3
+];
 
 %% Graphs and tests 
-tspan = [0 2];
+tspan = [0 10];
 
 % Define state vector and initials
 %x = [mdot_ox; mdot_ipa; Pc]
-x0 = [0 0 0];
-
-% Time constants
-tau_mdot = 0.11 / 4;
-tau_pc = 1.5 / 4;
+x0 = [0 0 0 0];
 
 % Step angles
-angle_ox = 90;
-angle_ipa = 90;
+angle_ox = 30;
+angle_ipa = 30;
 
 % Simulate system
-[t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, 0, 0), tspan, x0);
+[t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, t), tspan, x0);
 
+%%
 % Plots step response
 figure(1);
 subplot(2,2,1)
@@ -62,8 +75,8 @@ mdot_ox = zeros(400,1);
 idx = 1;
 
 for i = angles
-    mdot_ipa(idx) = valve_angle_to_mdot(i, 400, 150, 0.02836);
-    mdot_ox(idx) = valve_angle_to_mdot(i, 400, 150, 0.04126099537);
+    mdot_ipa(idx) = valve_angle_to_mdot(i, 820, 322.79, 0.02836);
+    mdot_ox(idx) = valve_angle_to_mdot(i, 820, 338.51, 0.04126099537);
     idx = idx + 1;
 end
 
@@ -80,7 +93,7 @@ legend('Mass Flow Oxidizer', 'Mass Flow IPA','Location','northwest')
 grid on 
 hold off
 
-%Thrust curve
+%Load Simulink Model
 model = 'TADPOLE_Closed_Loop';
 load_system(model);
 out = sim(model);
@@ -92,8 +105,12 @@ high_bound = data(:,3);
 low_bound = data(:,2);
 t_thrust = data(:,1);
 cloop_thrust = data(:,4);
+oloop_thrust = data(:,5);
 
-%Mass Flow Ratio Data
+% OL Chamber Pressure Data
+chamber_pressure = out.ChamberData.Data;
+
+% Mass Flow Ratio Data
 dataMFR = out.MFRData.Data;
 closedMFR = dataMFR(:,1);
 openMFR = dataMFR(:,2);
@@ -104,13 +121,14 @@ hold on
 plot(timeSim, t_thrust, 'y', 'LineWidth', 1);
 plot(timeSim, high_bound, 'r', 'LineWidth', 1);
 plot(timeSim, cloop_thrust, 'g', 'LineWidth', 1);
+plot(timeSim, oloop_thrust, 'm', 'LineWidth', 1);
 grid on
 xlim([0 20]);
 ylim([0 700]);
 xlabel('Time [s]');
 ylabel('Target Thrust');
 title('Simulated Closed Loop Throttle Test');
-legend('Low Bound', 'Target', 'High Bound', 'Modeled Thrust','Location','southeast');
+legend('Low Bound', 'Target', 'High Bound', 'Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
 hold off
 
 figure(3);
@@ -124,3 +142,15 @@ xlabel('Time [s]');
 ylabel('Mass Flow Ratio')
 title('Simulated Mass Flow Ratio: Open Loop vs. Closed Loop')
 legend('Closed Loop', 'Open Loop')
+hold off
+
+% FFT on OL Chamber Pressure
+fourier = fft(chamber_pressure);
+figure(4);
+plot(abs(fourier),'r','LineWidth',1);
+grid on
+xlim([0 1000]);
+ylim([0 0.8*10^5]);
+title('Fourier Transform for Chamber Pressure')
+xlabel('Frequency [Hz]');
+ylabel('Amplitude')
