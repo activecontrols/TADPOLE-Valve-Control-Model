@@ -37,7 +37,7 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     ipaError = 1 - 0.075*cos(0.7*t);
 
     %Sum of a high frequency (chugging) error and low freq. error
-    PcError = 1.0 + (0*sin(50*t) + 0.1*cos(1*t));
+    PcError = 1.03 + (0*sin(50*t) + 0.06*cos(1*t));
 
     f_ox = valve_angle_to_mdot(angle_ox, ox_tank_pressure, ox_manifold_pressure, ox_density)...
         * oxError;

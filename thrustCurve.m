@@ -1,8 +1,8 @@
 function thrust = thrustCurve(time)
 
-CURVE_TIME = 20;
-SLOPE = 2.5;
-OFFSET = 6 * SLOPE;
+CURVE_TIME = 22.5;
+SLOPE = 3.25;
+OFFSET = 8.75 * SLOPE;
 
 
 maxT = 550;

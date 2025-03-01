@@ -123,10 +123,10 @@ plot(timeSim, high_bound, 'r', 'LineWidth', 1);
 plot(timeSim, cloop_thrust, 'g', 'LineWidth', 1);
 plot(timeSim, oloop_thrust, 'm', 'LineWidth', 1);
 grid on
-xlim([0 20]);
+xlim([0 17]);
 ylim([0 700]);
 xlabel('Time [s]');
-ylabel('Target Thrust');
+ylabel('Target Thrust [lbf]');
 title('Simulated Closed Loop Throttle Test');
 legend('Low Bound', 'Target', 'High Bound', 'Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
 hold off
@@ -136,7 +136,7 @@ plot(timeSim, closedMFR, 'g', 'LineWidth', 1);
 hold on
 plot(timeSim, openMFR, 'r', 'LineWidth', 1);
 grid on 
-xlim([0 20]);
+xlim([0 16]);
 ylim([0.9 1.7]);
 xlabel('Time [s]');
 ylabel('Mass Flow Ratio')
