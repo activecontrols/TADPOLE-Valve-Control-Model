@@ -4,15 +4,16 @@ clear mex; % resets values inside PID
 quick_compiler
 addpath('closed_loop_valve_control_cpp');
 addpath('plant')
+addpath('TADPOLE 10K')
 
-%% Delays and noise
+%Delays and noise
 actuator_delay = 0.1131;
 noise_var_actuators = 0.1039 / 50;
-noise_var_outputs = 1;
-noise_var_mdot = 5e-5;
-timeDelta = 1/500;
-notch_freq = 574;
-deadtime_Pc = 0.05;        %seconds
+noise_var_pc = 2*0.28;
+noise_var_mdot = 1e-4;
+timeDelta = 1/500;          % seconds
+notch_freq = 150;           % Hz
+deadtime_Pc = 0.055;         % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
@@ -30,7 +31,69 @@ cf_table = [
     1.12, 1.3
 ];
 
-%% Graphs and tests 
+%Load Simulink Model
+x0 = [0 0 0 0];
+model = 'TADPOLE_Closed_Loop';
+load_system(model);
+out = sim(model);
+
+%Thrust Data
+data = out.ThrustCurves.Data;
+timeSim = out.ThrustCurves.Time;
+high_bound = data(:,3);
+low_bound = data(:,2);
+t_thrust = data(:,1);
+cloop_thrust = data(:,4);
+oloop_thrust = data(:,5);
+
+% OL Chamber Pressure Data
+chamber_pressure = out.ChamberData.Data;
+
+% Mass Flow Ratio Data
+dataMFR = out.MFRData.Data;
+closedMFR = dataMFR(:,1);
+openMFR = dataMFR(:,2);
+
+%% 5 Thrust Curve Tests
+figure(2);
+
+subplot(2,1,1);
+plot(timeSim(1000:end), low_bound(1000:end), 'b', 'LineWidth', 1);
+hold on
+plot(timeSim(1000:end), t_thrust(1000:end), 'y', 'LineWidth', 2);
+plot(timeSim(1000:end), high_bound(1000:end), 'r', 'LineWidth', 1);
+% plot(timeSim(1000:end), cloop_thrust(1000:end), 'g', 'LineWidth', 1);
+% plot(timeSim(1000:end), oloop_thrust(1000:end), 'm', 'LineWidth', 1);
+grid on
+xlim([0 20]);
+ylim([0 700]);
+xlabel('Time [s]');
+ylabel('Target Thrust [lbf]');
+xticks(0:1:20)
+title('Thrust Curve');
+legend('Low Bound','Target', 'High Bound','Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
+hold off
+
+subplot(2,1,2);
+plot(timeSim(1000:end), low_bound(1000:end), 'b', 'LineWidth', 1);
+hold on
+plot(timeSim(1000:end), t_thrust(1000:end), 'y', 'LineWidth', 2);
+plot(timeSim(1000:end), high_bound(1000:end), 'r', 'LineWidth', 1);
+plot(timeSim(1000:end), cloop_thrust(1000:end), 'g', 'LineWidth', 1);
+% plot(timeSim(1000:end), oloop_thrust(1000:end), 'm', 'LineWidth', 1);
+grid on
+xlim([0 20]);
+ylim([0 700]);
+xlabel('Time [s]');
+ylabel('Target Thrust [lbf]');
+xticks(0:1:20)
+title('Expected Response');
+legend('Low Bound','Target', 'High Bound','Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
+hold off
+
+sgtitle('Closed Loop: CPLC Challenge');
+
+%% Graphs
 tspan = [0 10];
 
 % Define state vector and initials
@@ -44,7 +107,6 @@ angle_ipa = 30;
 % Simulate system
 [t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, t), tspan, x0);
 
-%%
 % Plots step response
 figure(1);
 subplot(2,2,1)
@@ -93,28 +155,6 @@ legend('Mass Flow Oxidizer', 'Mass Flow IPA','Location','northwest')
 grid on 
 hold off
 
-%Load Simulink Model
-model = 'TADPOLE_Closed_Loop';
-load_system(model);
-out = sim(model);
-
-%Thrust Data
-data = out.ThrustCurves.Data;
-timeSim = out.ThrustCurves.Time;
-high_bound = data(:,3);
-low_bound = data(:,2);
-t_thrust = data(:,1);
-cloop_thrust = data(:,4);
-oloop_thrust = data(:,5);
-
-% OL Chamber Pressure Data
-chamber_pressure = out.ChamberData.Data;
-
-% Mass Flow Ratio Data
-dataMFR = out.MFRData.Data;
-closedMFR = dataMFR(:,1);
-openMFR = dataMFR(:,2);
-
 figure(2);
 plot(timeSim, low_bound, 'b', 'LineWidth', 1);
 hold on
@@ -127,7 +167,8 @@ xlim([0 17]);
 ylim([0 700]);
 xlabel('Time [s]');
 ylabel('Target Thrust [lbf]');
-title('Simulated Closed Loop Throttle Test');
+xticks(0:1:18)
+title('Simulated Thrust Curve');
 legend('Low Bound', 'Target', 'High Bound', 'Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
 hold off
 
