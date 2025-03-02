@@ -33,12 +33,12 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     GRAVITY_FT_S = 32.1740;        % Gravity in (ft / s^2)
     c_f = clamped_interpolation(x(4), cf_table);
 
-    oxError = 1.01 + 0.075*sin(0.42*t);
+    oxError = 1.02 + 0.075*sin(0.42*t);
     ipaError = 0.99 - 0.075*cos(0.85*t);
     chugMagnitude = max(1-(x(4)/550), 0)*0.0375;
 
     %Sum of a high frequency (chugging) error and low freq. error
-    PcError = 1.03 + (chugMagnitude*sin(185*t) + 0.085*cos(1*t));
+    PcError = 1.075 + (chugMagnitude*sin(185*t) + 0.05*cos(1*t));
 
     f_ox = valve_angle_to_mdot(angle_ox, ox_tank_pressure, ox_manifold_pressure, ox_density)...
         * oxError;
@@ -49,12 +49,13 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     f_thrust = f_Pc * c_f * tadpole_AREA_OF_THROAT;
 
     % Time constants
-    tau_mdot = 0.055 / 4;
+    tau_ox = 0.045 / 4;
+    tau_ipa = 0.075 / 4;
     tau_pc = 0.015 / 4;
 
     xdot = zeros(4,1);
-    xdot(1) = (-mdot_ox + f_ox) / tau_mdot;
-    xdot(2) = (-mdot_ipa + f_ipa) / tau_mdot;
+    xdot(1) = (-mdot_ox + f_ox) / tau_ox;
+    xdot(2) = (-mdot_ipa + f_ipa) / tau_ipa;
     xdot(3) = (-Pc + f_Pc) / tau_pc;
     xdot(4) = (-thrust + f_thrust) / tau_pc;
 end

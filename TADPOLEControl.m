@@ -10,7 +10,7 @@ addpath('TADPOLE 10K')
 actuator_delay = 0.1131;
 noise_var_actuators = 0.1039 / 50;
 noise_var_pc = 2*0.28;
-noise_var_mdot = 1e-4;
+noise_var_mdot = 1e-7;
 timeDelta = 1/500;          % seconds
 notch_freq = 150;           % Hz
 deadtime_Pc = 0.055;         % seconds
