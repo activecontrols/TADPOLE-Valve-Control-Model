@@ -91,7 +91,7 @@ title('Expected Response');
 legend('Low Bound','Target', 'High Bound','Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
 hold off
 
-sgtitle('Closed Loop: CPLC Challenge');
+sgtitle('Closed Loop: Slope Tracking');
 
 %% Graphs
 tspan = [0 10];
