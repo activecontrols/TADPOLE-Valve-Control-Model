@@ -4,6 +4,7 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     Pc = x(3);
     thrust = x(4);
 
+    %Tables and data
     ox_manifold_table = [
         192.5, 210.556, 228.611, 246.667, 264.722, 282.778, 300.833, 318.889, 336.944, 355.0, 373.056, 391.111, 409.167, 427.222, 445.278, 463.333, 481.389, 499.444, 517.5, 535.556, 550.0;
         118.055, 127.34, 136.64, 146.082, 155.44, 165.182, 175.069, 184.896, 194.888, 205.049, 215.378, 225.702, 236.381, 246.93, 257.695, 268.683, 279.647, 290.878, 301.999, 313.482, 322.79
@@ -18,7 +19,11 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     220, 550;
     1.12, 1.3
     ];
-    
+
+    %Percent change in thrust for a 0.01 increase in OF ratio (from CEA)
+    dT_dOF = 0.242;
+
+    %Manifold pressures
     ox_manifold_pressure = clamped_interpolation(x(4), ox_manifold_table);
     ipa_manifold_pressure = clamped_interpolation(x(4), ipa_manifold_table);
 
@@ -31,14 +36,17 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
     tadpole_AREA_OF_THROAT = 1.69; % in^2
     tadpole_C_STAR = 4998.0654;    % ft / s
     GRAVITY_FT_S = 32.1740;        % Gravity in (ft / s^2)
-    c_f = clamped_interpolation(x(4), cf_table);
+    c_f = clamped_interpolation(thrust, cf_table);
 
-    oxError = 1.01 + 0.075*sin(0.42*t);
-    ipaError = 1.03 - 0.075*cos(0.85*t);
-    chugMagnitude = max(1-(x(4)/550), 0)*0.0375;
+    oxError = 1 + 0*sin(0.42*t);
+    ipaError = 1 - 0*cos(0.85*t);
+    chugMagnitude = max(1-(thrust/550), 0)*0;
+    
+    %OF Ratio deviation
+    OF_error = 1.2 - max(mdot_ox, 0.01) / max(mdot_ipa, 0.01);
 
     %Sum of a high frequency (chugging) error and low freq. error
-    PcError = 1.05 + (chugMagnitude*sin(185*t) + 0.085*cos(1*t));
+    PcError = 1.0 + (chugMagnitude*sin(195*t) + 0*cos(1*t));
 
     f_ox = valve_angle_to_mdot(angle_ox, ox_tank_pressure, ox_manifold_pressure, ox_density)...
         * oxError;
@@ -46,11 +54,11 @@ function xdot = nonlinear_plant(x, angle_ox, angle_ipa, t)
         * ipaError;
     f_Pc = (mdot_ox + mdot_ipa) * tadpole_C_STAR / tadpole_AREA_OF_THROAT / GRAVITY_FT_S...
         * PcError;
-    f_thrust = f_Pc * c_f * tadpole_AREA_OF_THROAT;
+    f_thrust = (f_Pc * c_f * tadpole_AREA_OF_THROAT) * (1 + OF_error * dT_dOF);
 
     % Time constants
-    tau_ox = 0.045 / 4;
-    tau_ipa = 0.075 / 4;
+    tau_ox = 0.055 / 4;
+    tau_ipa = 0.055 / 4;
     tau_pc = 0.015 / 4;
 
     xdot = zeros(4,1);

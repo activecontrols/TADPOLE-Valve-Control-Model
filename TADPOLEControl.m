@@ -9,11 +9,11 @@ addpath('TADPOLE 10K')
 %Delays and noise
 actuator_delay = 0.1131;
 noise_var_actuators = 0.1039 / 50;
-noise_var_pc = 2*0.28;
-noise_var_mdot = 1e-7;
+noise_var_pc = 7.5*0.28;
+noise_var_mdot = 1e-5;
 timeDelta = 1/500;          % seconds
-notch_freq = 150;           % Hz
-deadtime_Pc = 0.055;         % seconds
+deadtime_Pc = 0.065;        % seconds
+deadtime_valve = 0.01;       % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
@@ -31,9 +31,11 @@ cf_table = [
     1.12, 1.3
 ];
 
-%Load Simulink Model
-x0 = [0 0 0 0];
-model = 'TADPOLE_Closed_Loop';
+% Initial Condition for Simulink
+x0 = [0 0 0 0 0 0];
+
+%% Load Simulink Model
+model = 'TADPOLE_Closed_Loop_NEWPLANT';
 load_system(model);
 out = sim(model);
 
