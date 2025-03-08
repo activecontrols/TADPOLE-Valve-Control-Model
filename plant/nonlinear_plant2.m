@@ -1,9 +1,15 @@
 function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
 
+    % Artificial Disturbances
+    max_mdot = 1.2;
+    max_Pc = 250;
+    dist_ox = max_mdot * 0 * sin(2*t);
+    dist_Pc = max_Pc* 0 * sin(2*t);
+
     %States
-    mdot_ox = x(1);
+    mdot_ox = x(1) + dist_ox;
     mdot_ipa = x(2);
-    Pc = x(3);
+    Pc = x(3) + dist_Pc;
     thrust = x(4);
     P_out_ox = x(5);
     P_out_ipa = x(6);
@@ -50,7 +56,7 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
         *(20/A_b + A_i)^(-1);
     xdot(2) = (P_out_ipa - Pc - E_f / (2*ipa_density*g*A_if/12^2) * mdot_ipa^2)* g ...
         *(10/A_b + A_i)^(-1);
-    xdot(3) = (R * T_c / V_c)*(mdot_ipa + mdot_ipa - A_t*g / cstar * Pc); 
+    xdot(3) = (R * T_c / V_c)*(mdot_ox + mdot_ipa - A_t*g / cstar * Pc); 
     xdot(4) = 0;
     xdot(5) = (-P_out_ox + valveangle2pout(angle_ox, ox_tank_pressure, ox_density, mdot_ox)) / tau_valve_ox;
     xdot(6) = (-P_out_ipa + valveangle2pout(angle_ipa, ipa_tank_pressure, ipa_density, mdot_ipa)) / tau_valve_ipa;
