@@ -1,16 +1,10 @@
 function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
 
-    % Artificial Disturbances
-    max_mdot = 1.2;
-    max_Pc = 250;
-    dist_ox = max_mdot * 0 * sin(2*t);
-    dist_Pc = max_Pc* 0 * sin(2*t);
-
     %States
     mdot_ox = x(1);
     mdot_ipa = x(2);
     Pc = x(3);
-    thrust = x(4);          % Set outsite equations
+    thrust = x(4);          % Set outside equations
     P_out_ox = x(5);
     P_out_ipa = x(6);
 

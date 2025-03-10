@@ -8,13 +8,17 @@ addpath('TADPOLE 10K')
 
 %Delays and noise
 actuator_delay = 0.1131;
-noise_var_actuators = 0.1039 / 50;
-noise_var_pc = 2*2.5;
-noise_var_mdot = 1e-5;
-noise_var_pout = 2*8.2;
-timeDelta = 1/500;          % seconds
+noise_T = 1/250;
+noise_var_pc = 0.25;
+noise_var_mdot = 2e-6;
+noise_var_pout = 0.55;
+
+timeDelta = 1/5000;         % seconds
+timeDeltaCMD = 1/250;       % seconds
+timeDeltaOUT = 1/1000;      % seconds
+
 deadtime_Pc = 0.065;        % seconds
-deadtime_valve = 0.02;       % seconds
+deadtime_valve = 0.02;      % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
@@ -83,7 +87,7 @@ hold on
 plot(timeSim(1000:end), t_thrust(1000:end), 'y', 'LineWidth', 2);
 plot(timeSim(1000:end), high_bound(1000:end), 'r', 'LineWidth', 1);
 plot(timeSim(1000:end), cloop_thrust(1000:end), 'g', 'LineWidth', 1);
-% plot(timeSim(1000:end), oloop_thrust(1000:end), 'm', 'LineWidth', 1);
+plot(timeSim(1000:end), oloop_thrust(1000:end), 'm', 'LineWidth', 1);
 grid on
 xlim([0 20]);
 ylim([0 700]);
