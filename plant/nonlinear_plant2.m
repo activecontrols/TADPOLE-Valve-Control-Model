@@ -7,19 +7,14 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     dist_Pc = max_Pc* 0 * sin(2*t);
 
     %States
-    mdot_ox = x(1) + dist_ox;
+    mdot_ox = x(1);
     mdot_ipa = x(2);
-    Pc = x(3) + dist_Pc;
-    thrust = x(4);
+    Pc = x(3);
+    thrust = x(4);          % Set outsite equations
     P_out_ox = x(5);
     P_out_ipa = x(6);
 
-    %Tables and data
-    cf_table = [
-    220, 550;
-    1.12, 1.3
-    ];
-
+    %Data
     ox_tank_pressure = 550; % psi
     ipa_tank_pressure = 550; % psi
     ox_density = 71.1936; %lb/ft^3

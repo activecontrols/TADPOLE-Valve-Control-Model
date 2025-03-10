@@ -9,11 +9,12 @@ addpath('TADPOLE 10K')
 %Delays and noise
 actuator_delay = 0.1131;
 noise_var_actuators = 0.1039 / 50;
-noise_var_pc = 1e-10; %7.5*0.28;
-noise_var_mdot = 1e-10; %1e-5;
+noise_var_pc = 2*2.5;
+noise_var_mdot = 1e-5;
+noise_var_pout = 2*8.2;
 timeDelta = 1/500;          % seconds
 deadtime_Pc = 0.065;        % seconds
-deadtime_valve = 0.01;       % seconds
+deadtime_valve = 0.02;       % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
