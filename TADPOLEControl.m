@@ -9,9 +9,9 @@ addpath('TADPOLE 10K')
 %Delays and noise
 actuator_delay = 0.1131;
 noise_T = 1/250;
-noise_var_pc = 0.25;
-noise_var_mdot = 2e-6;
-noise_var_pout = 0.55;
+noise_var_pc = 0.25e-10;
+noise_var_mdot = 2e-10;
+noise_var_pout = 0.55e-10;
 
 timeDelta = 1/5000;         % seconds
 timeDeltaCMD = 1/250;       % seconds

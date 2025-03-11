@@ -9,8 +9,8 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     P_out_ipa = x(6);
 
     %Data
-    ox_tank_pressure = 550; % psi
-    ipa_tank_pressure = 550; % psi
+    ox_tank_pressure = 820; % psi
+    ipa_tank_pressure = 820; % psi
     ox_density = 71.1936; %lb/ft^3
     ipa_density = 49.06838; %lb/ft^3
 
@@ -32,8 +32,8 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     A_if = 0.04031006898;                   %in^2
     A_io = 0.04875965463;                   %in^2
 
-    E_o = 1 - 2*(A_io / A_b)^2 + 0.03*(l_o / (0.5-0.065 * 2));
-    E_f = 1 - 2*(A_if / A_b)^2 + 0.03*(l_f / (0.5-0.065 * 2));
+    E_o = 1 + 0.06*(7 / (0.5 - 2*0.065));
+    E_f = 1 + 0.06*(7 / (0.5 - 2*0.065));
 
     % Valve settling times
     tau_valve_ox = 0.11 / 4;
@@ -41,9 +41,14 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
 
     % State Derivative
     xdot = zeros(6,1);
-    xdot(1) = (P_out_ox - Pc - E_o / (2*ox_density*g*A_io/12^2) * mdot_ox^2)* g ...
+
+    % Conversion factors
+
+    PER_FT2_TO_PER_IN2 = 1/144;
+    % Change to mass flow form weight flow.
+    xdot(1) = (P_out_ox - Pc - E_o / (2*ox_density*g*(A_io/12^2)^2) * mdot_ox^2 * PER_FT2_TO_PER_IN2) * g...
         *(20/A_b + A_i)^(-1);
-    xdot(2) = (P_out_ipa - Pc - E_f / (2*ipa_density*g*A_if/12^2) * mdot_ipa^2)* g ...
+    xdot(2) = (P_out_ipa - Pc - E_f / (2*ipa_density*g*(A_if/12^2)^2) * mdot_ipa^2 * PER_FT2_TO_PER_IN2) * g ...
         *(10/A_b + A_i)^(-1);
     xdot(3) = (R * T_c / V_c)*(mdot_ox + mdot_ipa - A_t*g / cstar * Pc); 
     xdot(4) = 0;
