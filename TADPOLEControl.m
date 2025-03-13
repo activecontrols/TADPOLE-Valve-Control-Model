@@ -8,17 +8,18 @@ addpath('TADPOLE 10K')
 
 %Delays and noise
 actuator_delay = 0.1131;
-noise_T = 1/250;
-noise_var_pc = 0.25e-10;
-noise_var_mdot = 2e-10;
-noise_var_pout = 0.55e-10;
+noise_T = 1/150;
+noise_var_pc = 0.5e-20;
+noise_var_mdot = 2e-12;
+noise_var_pout = 0.55e-20;
 
 timeDelta = 1/5000;         % seconds
 timeDeltaCMD = 1/250;       % seconds
 timeDeltaOUT = 1/1000;      % seconds
 
-deadtime_Pc = 0.065;        % seconds
-deadtime_valve = 0.02;      % seconds
+deadtime_mdot = 0.0;      % seconds
+deadtime_Pc = 0.055;        % seconds
+deadtime_valve = 0.03;      % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
@@ -37,7 +38,7 @@ cf_table = [
 ];
 
 % Initial Condition for Simulink
-x0 = [0 0 0 0 0 0];
+x0 = [0 1e-5 0 0 0 0];
 
 %% Load Simulink Model
 model = 'TADPOLE_Closed_Loop_NEWPLANT';
@@ -99,6 +100,20 @@ legend('Low Bound','Target', 'High Bound','Modeled Thrust [CL]','Modeled Thrust 
 hold off
 
 sgtitle('Closed Loop: Slope Tracking');
+
+%MFR
+figure(3);
+plot(timeSim, closedMFR, 'g', 'LineWidth', 1);
+hold on
+plot(timeSim, openMFR, 'r', 'LineWidth', 1);
+grid on 
+xlim([0 16]);
+ylim([0.9 1.7]);
+xlabel('Time [s]');
+ylabel('Mass Flow Ratio')
+title('Simulated Mass Flow Ratio: Open Loop vs. Closed Loop')
+legend('Closed Loop', 'Open Loop')
+hold off
 
 %% Graphs
 tspan = [0 10];
