@@ -34,8 +34,8 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     A_io = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
     C_d = 0.7;                              %injector coef
-    l_eq_ox = 700;                            %eq line length ox
-    l_eq_ipa = 700;                           %eq line length ipa
+    l_eq_ox = 7;                            %eq line length ox
+    l_eq_ipa = 7;                           %eq line length ipa
     d = (0.5 - 2*0.065);                    %diameter of line
     
     DP_i_ox = 1 / (2 * ox_density * g *(C_d * A_io)^2);
