@@ -17,9 +17,9 @@ timeDelta = 1/5000;         % seconds
 timeDeltaCMD = 1/250;       % seconds
 timeDeltaOUT = 1/1000;      % seconds
 
-deadtime_mdot = 0.0;      % seconds
-deadtime_Pc = 0.055;        % seconds
-deadtime_valve = 0.03;      % seconds
+deadtime_mdot = 0;          % seconds
+deadtime_Pc = 0.04;         % seconds
+deadtime_valve = 0.02;      % seconds
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
