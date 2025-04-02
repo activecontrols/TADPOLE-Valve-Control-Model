@@ -2,7 +2,6 @@
 clear;
 ox_density = 0.04126099537; % lbs / in^3
 ipa_density = 0.02836; % lbs / in^3
-addpath('plant')
 
 % pouts = 3:0.1:5;
 angles = 0:1:90;
@@ -32,7 +31,9 @@ angle_ipa = 29;
 
 %% Model 2
 % Define initial conditions
-x0 = [0 1e-5 0 0 0 0];           
+P_atm = 14.696; %psi
+
+x0 = [0 0 P_atm 0 P_atm P_atm];           
 
 [t2, x2] = ode45(@(t2, x2) nonlinear_plant2(x2, angle_ox, angle_ipa, t2), tspan, x0);
 

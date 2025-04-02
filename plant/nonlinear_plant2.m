@@ -7,7 +7,7 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     thrust = x(4);          % Set outside equations
     P_out_ox = x(5);
     P_out_ipa = x(6);
-    distMode = 1;           % 1 for disturbances, 0 for none
+    distMode = 0;           % 1 for disturbances, 0 for none
 
     %Data
     ox_tank_pressure = 820 + distMode * 25*sin(4*t); % psi, with disturbance
@@ -16,14 +16,15 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     ipa_density = 49.06838 / 1728; %lb/in^3
 
     %% Parameters
+    OF = mdot_ox / max(mdot_ipa, 1e-10);
 
     A_t = 1.697;                            %in^2
     V_c = 67.3196;                          %in^3
     R_u = 10.7315 * 12^2;                   %psi*ft^3*lb/mol/°R
     R = R_u / 18.8;                         %psi*ft^3*lb/mol/°R 
-    T_c = tempfcn(mdot_ox / mdot_ipa);      %Rankine
+    T_c = tempfcn(OF);                      %Rankine
     g = 32.174 * 12;                        %in/s
-    cstar = fcn_cstar(mdot_ox / mdot_ipa);  %ft/s
+    cstar = fcn_cstar(OF);                  %ft/s
     l = 0.165;                              %in
     D = 0.033;                              %in
     A_i = l / (12 * pi * (D/2)^2);          %in^2
@@ -52,6 +53,8 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t)
     xdot = zeros(6,1);
 
     %% ODEs
+    P_atm = 14.696;
+
     xdot(1) = (P_out_ox - Pc - (DP_i_ox + DP_l_ox) * mdot_ox^2) * g * (A_b/l_o);
     xdot(2) = (P_out_ipa - Pc - (DP_i_ipa + DP_l_ipa) * mdot_ipa^2) * g * (A_b/l_f);
     xdot(3) = (R * T_c / V_c)*(mdot_ox + mdot_ipa - A_t*(g /12) / cstar * Pc)*(1 + 0.04*distMode*sin(0.5*t)); 
