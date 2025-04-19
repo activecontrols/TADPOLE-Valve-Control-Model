@@ -13,4 +13,6 @@ function pout = valveangle2pout(valve_angle, tank_pressure, fluid_density, mass_
 
     cv = clamped_interpolation(valve_angle, cv_table);
     pout = max(tank_pressure - (mass_flow*(IN3_TO_GAL * PER_SEC_TO_PER_MIN) / cv)^2 ...
-        *(LB_TO_TON * PER_IN3_TO_PER_M3) / (fluid_density), 14.696);
+        *(LB_TO_TON * PER_IN3_TO_PER_M3) / (fluid_density), 14.3);
+
+    % cv = 5.3202e-06*angle_ox^3 + 8.2880e-06*angle_ox^2 + 0.0111*angle_ox;

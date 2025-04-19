@@ -5,6 +5,7 @@ quick_compiler
 addpath('closed_loop_valve_control_cpp');
 addpath('plant')
 addpath('TADPOLE 10K')
+addpath('lib')
 
 %Delays and noise
 actuator_delay = 0.1131;
@@ -38,12 +39,14 @@ cf_table = [
 ];
 
 % Initial Condition for Simulink
-x0 = [0 1e-5 0 0 0 0];
+x0 = [0 1e-6 0 0 0];
 
 %% Load Simulink Model
 model = 'TADPOLE_Closed_Loop_NEWPLANT';
 load_system(model);
 out = sim(model);
+
+%%
 
 %Thrust Data
 data = out.ThrustCurves.Data;
@@ -54,22 +57,13 @@ t_thrust = data(:,1);
 cloop_thrust = data(:,4);
 oloop_thrust = data(:,5);
 
-% OL Chamber Pressure Data
-chamber_pressure = out.ChamberData.Data;
-
-% Mass Flow Ratio Data
-dataMFR = out.MFRData.Data;
-closedMFR = dataMFR(:,1);
-openMFR = dataMFR(:,2);
-
 %% 5 Thrust Curve Tests
 figure(2);
 
-subplot(2,1,1);
-plot(timeSim(1000:end), low_bound(1000:end), 'b', 'LineWidth', 1);
+plot(timeSim(10000:end), low_bound(10000:end), 'b', 'LineWidth', 1);
 hold on
-plot(timeSim(1000:end), t_thrust(1000:end), 'y', 'LineWidth', 2);
-plot(timeSim(1000:end), high_bound(1000:end), 'r', 'LineWidth', 1);
+plot(timeSim(10000:end), t_thrust(10000:end), 'g', 'LineWidth', 2);
+plot(timeSim(10000:end), high_bound(10000:end), 'r', 'LineWidth', 1);
 % plot(timeSim(1000:end), cloop_thrust(1000:end), 'g', 'LineWidth', 1);
 % plot(timeSim(1000:end), oloop_thrust(1000:end), 'm', 'LineWidth', 1);
 grid on
@@ -82,6 +76,7 @@ title('Thrust Curve');
 legend('Low Bound','Target', 'High Bound','Modeled Thrust [CL]','Modeled Thrust [OL]','Location','southeast');
 hold off
 
+%%
 subplot(2,1,2);
 plot(timeSim(1000:end), low_bound(1000:end), 'b', 'LineWidth', 1);
 hold on

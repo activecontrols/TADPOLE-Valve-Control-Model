@@ -2,18 +2,26 @@
 clear;
 ox_density = 0.04126099537; % lbs / in^3
 ipa_density = 0.02836; % lbs / in^3
+water_density = 0.0360724;
 
 % pouts = 3:0.1:5;
 angles = 0:1:90;
 idx = 1;
 pout_ox = zeros(91,1);
 pout_ipa = zeros(91,1);
+mdot = zeros(91,1);
 for i = angles
-    pout_ipa(idx) = max(valveangle2pout(i, 550, 0.02836 * 1728, 2),0);
-    pout_ox(idx) = max(valveangle2pout(i, 550, 0.04126099537 * 1728, 2),0);
+    pout_ipa(idx) = max(valveangle2pout(i, 80, 0.03, 0.35),0);
+    pout_ox(idx) = max(valveangle2pout(i, 80, 0.03, 0.35),0);
+    %mdot(idx) = valve_angle_to_mdot(i, 110, 14.696, water_density);
     idx = idx + 1;
 end
-plot(angles, pout_ox)
+figure(1);
+plot(angles, mdot, 'b','LineWidth',0.8);
+grid on
+xlabel('Angles [deg]');
+ylabel('Mass Flow [lb/s]');
+title('Mass Flow vs Valve Angle');
 
 
 %% Model 1
@@ -23,8 +31,8 @@ tspan = [0 2];
 x0 = [0 0 0 0];
 
 % Step angles
-angle_ox = 29.5;
-angle_ipa = 29;
+angle_ox = 29.5;  
+angle_ipa = 29; 
 
 % Simulate system
 [t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, t), tspan, x0);
@@ -33,9 +41,9 @@ angle_ipa = 29;
 % Define initial conditions
 P_atm = 14.696; %psi
 
-x0 = [0 0 P_atm 0 P_atm P_atm];           
+x0 = [0 0 0 0 0];           
 
-[t2, x2] = ode45(@(t2, x2) nonlinear_plant2(x2, angle_ox, angle_ipa, t2), tspan, x0);
+[t2, x2] = ode45(@(t2, x2) nonlinear_plant2(x2, angle_ox, angle_ipa, t2, 0), tspan, x0);
 
 %% Plots
 figure(2);
@@ -74,7 +82,7 @@ grid on
 hold off
 
 subplot(2,3,4)
-plot(t2, x2(:,5), 'b', 'LineWidth', 2);
+plot(t2, x2(:,4), 'b', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Pressure Downstream of Valve OX [psi]');
 title('Step Response');
@@ -83,7 +91,7 @@ grid on
 hold off
 
 subplot(2,3,5)
-plot(t2, x2(:,6), 'b', 'LineWidth', 2);
+plot(t2, x2(:,5), 'b', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Pressure Downstream of Valve IPA [psi]');
 title('Step Response');
