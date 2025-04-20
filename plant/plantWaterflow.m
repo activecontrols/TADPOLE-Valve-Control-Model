@@ -1,36 +1,40 @@
-function xdot = plantWaterflow(x, angle_w, angle_ipa, t)
+function xdot = plantWaterflow(x, angle_ox, cvCOEFS)
+
+    syms P_out_dot P_out_S mdot_in_S mdot_out_S
+    %% Curve fit V30 valve
+    % Cv given angle
+    cvOX = -9.3261e-08*angle_ox^3 + 2.9512e-04*angle_ox^2 + 6.2035e-04*angle_ox;
+    cvOX = polyval(cvCOEFS, angle_ox);
 
     %States
-    mdot_w = x(1);
-    P_out_w = x(2);
+    P_out = x(1);
+    mdot = x(2);
 
     %Data
-    water_tank_pressure = 90;   %psi
     water_density = 0.0361;     %lb/in^3
 
     %% Parameters
-
-    g = 32.174 * 12;                        %in/s
-    d = (0.5 - 2*0.065);                    %diameter of line
-    A_b = pi * (d / 2)^2;                   %in^2
-    l_w = 179;                              %in
-    C_fric = 0.03;                          %line friction coef
-    l_eq_water = 2;                         %eq line length ox
-    
-    % DP_l_w = C_fric * l_eq_water / (2 * d * g * water_density * A_b^2);
-    DP_l_w = 0;
-
     % Valve settling times
-    tau_valve_w = 0.1;
+    tau_valve = 0.1;
 
     % State Derivative
-    xdot = zeros(2,1);
-
+    xdot = zeros(2, 1);
     %% ODEs
-    P_atm = 14.696;
+    rho_fluid = water_density;
+    rhoWat = water_density;
+    P_atm = 0;
+    P_tank = 80;
+    C_d = 1.35;
+    A_e = 0.127;
+    l = 10;
+    K = 1000;
+    V_d = A_e * l;
 
-    xdot(1) = (P_out_w - P_atm - DP_l_w * mdot_w^2) * g * (A_b/l_w);
-    xdot(2) = (-P_out_w + valveangle2pout(angle_w, water_tank_pressure, water_density, mdot_w)) / tau_valve_w;
+    % Numerical
+    mdot_in = 231/60 * cvOX * sqrt(rho_fluid * rhoWat * (P_tank - P_out));
+    mdot_out = C_d * A_e * sqrt(2 * rho_fluid * max((P_out - P_atm), 0));
 
+    xdot(1) = K / V_d * (mdot_in - mdot_out);
+    xdot(2) = (-mdot + mdot_in) / tau_valve;
 end
 
