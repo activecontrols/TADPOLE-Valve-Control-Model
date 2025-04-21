@@ -1,4 +1,4 @@
-function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
+function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
 
     %States
     mdot_ox = x(1) * (1 + distMode* (0.01 + 0.01 * sin(2*t)));
@@ -10,10 +10,11 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
     %% PARAMS
     distMode = 0;
     t = 0;
-    ox_tank_pressure = 820 + distMode * 2*sin(100*t); % psi, with disturbance
-    ipa_tank_pressure = 820 + distMode * 2*sin(155*t); % psi, with disturbance
+    P_tank_ox = 500 + distMode * 2*sin(100*t); % psi, with disturbance
+    P_tank_ipa = 500 + distMode * 2*sin(155*t); % psi, with disturbance
     ox_density = 71.1936 / 1728; %lb/in^3
     ipa_density = 49.06838 / 1728; %lb/in^3
+    water_density = 0.0361;     %lb/in^3
 
     %OF = mdot_ox / max(mdot_ipa, 1e-10);
 
@@ -29,12 +30,14 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
     A_l = pi * (d / 2)^2;                   %in^2
     l_f = 120;                              %in
     l_o = 240;                              %in
-    A_if = 0.04031006898;                   %in^2
-    A_io = 0.04875965463;                   %in^2
+    A_io = 0.04031006898;                   %in^2
+    A_if = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
-    C_d = 0.72;                              %injector coef
+    C_d = 0.7;                              %injector coef
     l_eq_ox = 7;                            %eq line length ox
     l_eq_ipa = 7;                           %eq line length ipa
+    V_lo = A_l * l_eq_ox;
+    V_lf = A_l * l_eq_ox;
     
     % Line and injector pressure drops
     DP_i_ox = 1 / (2 * ox_density * g *(C_d * A_io)^2);
@@ -43,9 +46,13 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
     DP_i_ipa = 1 / (2 * ipa_density * g *(C_d * A_if)^2);
     DP_l_ipa = C_fric * l_eq_ipa / (2 * d * g * ipa_density * A_l^2);
 
-    % Valve settling times
-    tau_valve_ox = 0.1;
-    tau_valve_ipa = 0.1;
+    % Valve Cvs
+    cvOX = 2.55 ./ (1 + exp(-(angle_ox - 60) / 10));
+    cvIPA = 2.55 ./ (1 + exp(-(angle_ipa - 60) / 10));
+
+    % Fluid build up inside line
+    mdot_in_ox = 231/60 * cvOX * sqrt(ox_density * water_density * (P_tank_ox - P_out_ox));
+    mdot_in_ipa = 231/60 * cvIPA * sqrt(ipa_density * water_density * (P_tank_ipa - P_out_ipa));
 
     % State Derivative
     xdot = zeros(5,1);
@@ -55,8 +62,8 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
     xdot(1) = (P_out_ox - Pc - (DP_i_ox + DP_l_ox) * mdot_ox^2) * g * (A_l/l_o);
     xdot(2) = (P_out_ipa - Pc - (DP_i_ipa + DP_l_ipa) * mdot_ipa^2) * g * (A_l/l_f);
     xdot(3) = (R * T_c / V_c)*(mdot_ox + mdot_ipa - A_t*(g /12) / cstar * Pc); 
-    xdot(4) = (-P_out_ox + valveangle2pout(angle_ox, ox_tank_pressure, ox_density, mdot_ox)) / tau_valve_ox;
-    xdot(5) = (-P_out_ipa + valveangle2pout(angle_ipa, ipa_tank_pressure, ipa_density, mdot_ipa)) / tau_valve_ipa;
+    xdot(4) = 44387 / V_lo * (mdot_in_ox - mdot_ox);
+    xdot(5) = 44387 / V_lf * (mdot_in_ipa - mdot_ipa);
 
 end
 

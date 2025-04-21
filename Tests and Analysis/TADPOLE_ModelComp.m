@@ -13,15 +13,15 @@ mdot = zeros(91,1);
 for i = angles
     pout_ipa(idx) = max(valveangle2pout(i, 80, 0.03, 0.35),0);
     pout_ox(idx) = max(valveangle2pout(i, 80, 0.03, 0.35),0);
-    %mdot(idx) = valve_angle_to_mdot(i, 110, 14.696, water_density);
+    mdot(idx) = valve_angle_to_mdot(i, 110, 14.696, water_density);
     idx = idx + 1;
 end
 figure(1);
-plot(angles, mdot, 'b','LineWidth',0.8);
+plot(angles, 80 - pout_ox, 'b','LineWidth',0.8);
 grid on
 xlabel('Angles [deg]');
-ylabel('Mass Flow [lb/s]');
-title('Mass Flow vs Valve Angle');
+ylabel('Pressure Drop');
+title('Pressure Drop vs Valve Angle');
 
 
 %% Model 1
@@ -31,8 +31,8 @@ tspan = [0 2];
 x0 = [0 0 0 0];
 
 % Step angles
-angle_ox = 29.5;  
-angle_ipa = 29; 
+angle_ox = 53;  
+angle_ipa = 53; 
 
 % Simulate system
 [t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, t), tspan, x0);
@@ -44,6 +44,7 @@ P_atm = 14.696; %psi
 x0 = [0 0 0 0 0];           
 
 [t2, x2] = ode45(@(t2, x2) nonlinear_plant2(x2, angle_ox, angle_ipa, t2, 0), tspan, x0);
+[t3, x3] = ode45(@(t3, x3) nonlinear_plant3(x3, angle_ox, angle_ipa, t3, 0), tspan, x0);
 
 %% Plots
 figure(2);
@@ -52,10 +53,11 @@ subplot(2,3,1)
 plot(t, x(:,1), 'b', 'LineWidth', 2);
 hold on
 plot(t2, x2(:,1), 'r', 'LineWidth', 2);
+plot(t3, x3(:,1), 'g', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Oxidizer Flow [lbm/s]');
 title('Step Response');
-legend('Model 1', 'Model 2');
+legend('Model 1', 'Model 2', 'Model 3');
 grid on
 hold off
 
@@ -63,10 +65,11 @@ subplot(2,3,2)
 plot(t, x(:,2), 'b', 'LineWidth', 2);
 hold on
 plot(t2, x2(:,2), 'r', 'LineWidth', 2);
+plot(t3, x3(:,2), 'g', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Fuel Flow [lbm/s]');
 title('Step Response');
-legend('Model 1', 'Model 2');
+legend('Model 1', 'Model 2', 'Model 3');
 grid on
 hold off
 
@@ -74,27 +77,32 @@ subplot(2,3,3)
 plot(t, x(:,3), 'b', 'LineWidth', 2);
 hold on
 plot(t2, x2(:,3), 'r', 'LineWidth', 2);
+plot(t3, x3(:,3), 'g', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Chamber Pressure [psi]');
 title('Step Response');
-legend('Model 1', 'Model 2');
+legend('Model 1', 'Model 2', 'Model 3');
 grid on
 hold off
 
 subplot(2,3,4)
-plot(t2, x2(:,4), 'b', 'LineWidth', 2);
+plot(t2, x2(:,4), 'r', 'LineWidth', 2);
+hold on
+plot(t3, x3(:,4), 'g', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Pressure Downstream of Valve OX [psi]');
 title('Step Response');
-legend('Model 2')
+legend('Model 2', 'Model 3')
 grid on
 hold off
 
 subplot(2,3,5)
-plot(t2, x2(:,5), 'b', 'LineWidth', 2);
+plot(t2, x2(:,5), 'r', 'LineWidth', 2);
+hold on;
+plot(t3, x3(:,5), 'g', 'LineWidth', 2);
 xlabel('Time (s)');
 ylabel('Pressure Downstream of Valve IPA [psi]');
 title('Step Response');
-legend('Model 2')
+legend('Model 2', 'Model 3')
 grid on
 hold off

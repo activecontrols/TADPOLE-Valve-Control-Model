@@ -24,10 +24,10 @@ Cv_ox_plots = true;
 Cv_ipa_plots = false;
 Mdot_ox_plots = true;
 Mdot_ipa_plots = false;
-Cv_CMD = true;
+Cv_CMD = false;
 
 %% Initialize data and filter
-dataWf = readmatrix("CL 4_19.xlsx");
+dataWf = readmatrix("loxrecal");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -36,22 +36,22 @@ dataF = movingavg(dataWf);
 dataF = dataF(1:rows, :);
 
 %% Extract data
-angle_Mox = dataWf(:, 7) * 360;
+angle_Mox = dataWf(:, 6) * 360;
 angle_Cox = dataWf(:, 4) * 360;
-angle_Mipa = dataWf(:, 12) * 360;
-angle_Cipa = dataWf(:, 6) * 360;
+angle_Mipa = dataWf(:, 11) * 360;
+angle_Cipa = dataWf(:, 5) * 360;
 
-mdot_ox = dataF(:, 31);
-mdot_ipa = dataF(:, 32);
-mdot_trg_ox = dataWf(:, 33);
-mdot_trg_ipa = dataWf(:, 34);
+mdot_ox = dataF(:, 30);
+mdot_ipa = dataF(:, 31);
+mdot_trg_ox = dataWf(:, 32);
+mdot_trg_ipa = dataWf(:, 33);
 
-P_up_ox = dataF(:, 17);
-P_dw_ox = dataF(:, 18);
-P_out_ox = dataF(:, 19);
-P_up_ipa = dataF(:, 22);
-P_dw_ipa = dataF(:, 23);
-P_out_ipa = dataF(:, 24);
+P_up_ox = dataF(:, 16);
+P_dw_ox = dataF(:, 17);
+P_out_ox = dataF(:, 18);
+P_up_ipa = dataF(:, 21);
+P_dw_ipa = dataF(:, 22);
+P_out_ipa = dataF(:, 23);
 
 % Venturi dimensions
 A_th_ox = 0.0203;
@@ -77,7 +77,7 @@ DPVenturiOX = max(P_dw_ox - P_out_ox, 0);
 mdot_ox_EST = A_th_ox .* sqrt(2 * rhoFluid * DPVenturiOX * g ./ (1 - (A_th_ox / A_in)^2));
 
 % Modify when using a diffrent fluid. Change density and can't assume SG of 1.
-CdFF = 1.355;        % Tunable parameter (In the 1.33-1.37 range).
+Kf = 1.355;        % Tunable parameter (In the 1.33-1.37 range).
 P_atm = 14.3;        % Tecnically just the backpressure on the valve.
                      % this becomes Pc in a real test.
 
@@ -89,17 +89,18 @@ FF_ox = mdot_trg_ox / rhoFluid / 231 * 60 .* sqrt(1 ./ DPValveOX);
 
 % Retuned feedforward command
 FF_ox_v3 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_atm - ...
-            mdot_trg_ox.^2 / (2 * rhoFluid * (CdFF * A_in)^2))));
+            mdot_trg_ox.^2 / (2 * rhoFluid * (Kf * A_in)^2))));
 
 %% Plots
 if Mdot_ox_plots == true
     figure;
     plot(t, mdot_ox, 'b', 'LineWidth', 1); grid on; hold on;
     plot(t, mdot_trg_ox, 'r', 'LineWidth', 1)
+    plot(t, mdot_ox_EST, 'g', 'LineWidth', 1)
     xlabel('Time [s]');
     ylabel('Mass Flow [lbm/s]');
     title('Ox Mass Flow vs. Time');
-    legend('Mass Flow', 'Target');
+    legend('Mass Flow', 'Target', 'Offline MDOT');
 end
 if Mdot_ipa_plots == true
     figure;
@@ -114,7 +115,6 @@ if Cv_ox_plots == true
     figure;
 
     subplot(1,2,1);
-    plot(angle_Mox, cvV60OX, 'r-x','MarkerSize',5); grid on; hold on;
     plot(angle_Mox, cvV30OX, 'b-x','MarkerSize',5); grid on; hold on;
     plot(angle_Mox, cv2OX, 'g-x', 'MarkerSize',5);
     xlim([0 90]);
@@ -123,17 +123,21 @@ if Cv_ox_plots == true
     ylabel('Cv');
     
     % Add a curve fit to local Cv to account for phase shift
-    CVcoef = polyfit(angle_Mox, cv2OX, 4);
-    CVMODEL = polyval(CVcoef, 0:1:90);
-    plot(0:1:90, CVMODEL, 'm','LineWidth',0.9);
-    legend('V60 Cv', 'V30 Cv', 'Estimated Cv', 'Curve Fit for Data');
+    CVcoef = polyfit(angle_Mox, cv2OX, 5);
+    angles = 0:1:90;
+    CVMODEL = polyval(CVcoef, angles);
+    CVMODEL2 = 2.55 ./ (1 + exp(-(angles - 60) / 10));
+    plot(angles, CVMODEL, 'm','LineWidth',0.9);
+    plot(angles, CVMODEL2, 'r','LineWidth',1.2);
+    legend('V30 Cv', 'Estimated Cv', 'Curve Fit for Data', 'Model 2');
     title('Cv Comparaison OX')
     
     % Plot Cvs over time
     subplot(1,2,2);
+    localCv = polyval(TADPOLECv, angle_Mox);
     plot(t, cvV60OX, 'r', 'LineWidth', 1); hold on; grid on;
     plot(t, cvV30OX, 'b', 'LineWidth', 1); hold on; grid on;
-    plot(t, cv2OX, 'g', 'LineWidth',1);
+    plot(t, localCv, 'g', 'LineWidth',1);
     xlabel('Time [s]');
     ylabel('Cv');
     title('OX Valve Cv vs. Time');
