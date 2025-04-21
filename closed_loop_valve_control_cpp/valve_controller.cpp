@@ -10,17 +10,16 @@
 #define tadpole_MASS_FLOW_RATIO 1.2 // #ox = 1.2 * ipa
 #define GRAVITY_FT_S 32.1740        // Gravity in (ft / s^2)
 
-#define IN3_TO_GAL 0.004329       // convert cubic inches to gallons
-#define PER_SEC_TO_PER_MIN 60     // convert per second to per minute
-#define LB_TO_TON 0.000453592     // convert lb to metric tons
-#define PER_IN3_TO_PER_M3 61023.7 // convert per in^3 to per m^3
+#define IN3_TO_GAL 0.004329     // convert cubic inches to gallons
+#define PER_SEC_TO_PER_MIN 60   // convert per second to per minute
+#define DENSITY_WATER 0.0360724 // lb/in^3
 
 #define INTERPOLATION_TABLE_LENGTH 30 // max length of all tables - set to enable passing tables to functions
 #define VALVE_ANGLE_TABLE_LEN 11
 // CV (assume unitless) to angle (degrees)
 double valve_angle_table[2][INTERPOLATION_TABLE_LENGTH] = {
-    {0.000, 0.070, 0.161, 0.378, 0.670, 1.000, 1.450, 2.050, 2.780, 3.710, 4.960},
-    {0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90}};
+    {0, 0.0890, 0.0741, 0.0807, 0.1968, 0.4659, 0.8864, 1.4125, 1.9532, 2.3731, 2.4919},
+    {0, 9.0000, 18.0000, 27.0000, 36.0000, 45.0000, 54.0000, 63.0000, 72.0000, 81.0000, 90.0000}};
 
 #define CF_THRUST_TABLE_LEN 2 // TODO RJN OL - replace with data from testing
 // thrust (lbf) to cf (unitless)
@@ -133,9 +132,12 @@ void mass_balance(double total_mass_flow, double *mass_flow_ox, double *mass_flo
 // OUTPUT: valve flow coefficient (assume this is unitless)
 // INPUT: mass_flow (lbm/s), downstream pressure (psi), fluid properties
 double sub_critical_cv(double mass_flow, double upstream_pressure, double downstream_pressure, double density) {
-  double pressure_delta = upstream_pressure - downstream_pressure;
+  double K = 1.355;
+  double pipe_area = 0.127;
+  double correction_factor = pow(mass_flow, 2) / (2 * density * pow(K, 2) * pow(pipe_area, 2));
+  double pressure_delta = upstream_pressure - downstream_pressure - correction_factor;
   pressure_delta = pressure_delta > 0 ? pressure_delta : 0.0001; // block negative under sqrt and divide by 0
-  return mass_flow * IN3_TO_GAL * PER_SEC_TO_PER_MIN * sqrt(LB_TO_TON * PER_IN3_TO_PER_M3 / pressure_delta / density);
+  return mass_flow * IN3_TO_GAL * PER_SEC_TO_PER_MIN * sqrt(1 / (pressure_delta * density * DENSITY_WATER));
 }
 
 // Lookup the valve angle using linear interpolation
@@ -182,8 +184,8 @@ void open_loop_thrust_control_defaults(double thrust, double *angle_ox, double *
 double estimate_mass_flow(Fluid_Line fluid_line, Venturi venturi, double fluid_density) {
   double pressure_delta = fluid_line.venturi_upstream_pressure - fluid_line.venturi_throat_pressure;
   pressure_delta = pressure_delta > 0 ? pressure_delta : 0; // block negative under sqrt
-  double area_term = 1 - pow(venturi.throat_area / venturi.inlet_area, 2);
-  return venturi.throat_area * sqrt(2 * fluid_density * pressure_delta / (1 - area_term)) * venturi.cd;
+  double area_term = pow(venturi.throat_area / venturi.inlet_area, 2);
+  return venturi.throat_area * sqrt(2 * fluid_density * pressure_delta * 12 * GRAVITY_FT_S / (1 - area_term)) * venturi.cd;
 }
 
 void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
