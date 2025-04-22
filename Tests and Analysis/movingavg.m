@@ -39,7 +39,7 @@ cols = size(data,2);
 %% CALCULATIONS
 
 % Filtering Step
-horizon = 8;
+horizon = 4;
 avg = zeros(res+1, cols);
 filter = zeros(res+1, cols);
 for j = 1:1:cols

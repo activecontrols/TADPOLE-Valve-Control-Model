@@ -29,10 +29,10 @@ function xdot = nonlinear_plant2(x, angle_ox, angle_ipa, t, distMode)
     A_l = pi * (d / 2)^2;                   %in^2
     l_f = 120;                              %in
     l_o = 240;                              %in
-    A_if = 0.04031006898;                   %in^2
-    A_io = 0.04875965463;                   %in^2
+    A_io = 0.04031006898;                   %in^2
+    A_if = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
-    C_d = 0.72;                              %injector coef
+    C_d = 0.8;                              %injector coef
     l_eq_ox = 7;                            %eq line length ox
     l_eq_ipa = 7;                           %eq line length ipa
     

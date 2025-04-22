@@ -31,8 +31,8 @@ tspan = [0 2];
 x0 = [0 0 0 0];
 
 % Step angles
-angle_ox = 53;  
-angle_ipa = 53; 
+angle_ox = 45;  
+angle_ipa = 44; 
 
 % Simulate system
 [t, x] = ode45(@(t, x) nonlinear_plant(x, angle_ox, angle_ipa, t), tspan, x0);

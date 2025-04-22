@@ -8,6 +8,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Curve fit V30 and V60 Valves
+addpath('.DATA\')
 V30 = [0:9:90;
        0.00 0.05 0.118 0.236 0.405 0.624 0.880 1.200 1.550 1.954 2.380];
 V30C = polyfit(V30(1,:), V30(2,:), 3);
@@ -24,10 +25,10 @@ Cv_ox_plots = true;
 Cv_ipa_plots = false;
 Mdot_ox_plots = true;
 Mdot_ipa_plots = false;
-Cv_CMD = false;
+Cv_CMD = true;
 
 %% Initialize data and filter
-dataWf = readmatrix("loxrecal");
+dataWf = readmatrix("loxcl10.csv");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -91,6 +92,19 @@ FF_ox = mdot_trg_ox / rhoFluid / 231 * 60 .* sqrt(1 ./ DPValveOX);
 FF_ox_v3 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_atm - ...
             mdot_trg_ox.^2 / (2 * rhoFluid * (Kf * A_in)^2))));
 
+% Feeforward V4
+C_fric = 0.03;
+d = 0.35;
+C_d = 0.084;
+l = 10;
+
+DP_i = 1 / (2 * rhoFluid * g *(C_d * A_in)^2);
+%DP_l = C_fric * l / (2 * d * g * rhoFluid * A_in^2);
+%DPVenturi = (1 - (A_th_ox / A_in)^2) / (2 * A_th_ox^2 * rhoFluid * g);
+
+FF_ox_v4 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_atm - ...
+            (DP_i) * mdot_trg_ox .^2)));
+
 %% Plots
 if Mdot_ox_plots == true
     figure;
@@ -126,7 +140,7 @@ if Cv_ox_plots == true
     CVcoef = polyfit(angle_Mox, cv2OX, 5);
     angles = 0:1:90;
     CVMODEL = polyval(CVcoef, angles);
-    CVMODEL2 = 2.55 ./ (1 + exp(-(angles - 60) / 10));
+    CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
     plot(angles, CVMODEL, 'm','LineWidth',0.9);
     plot(angles, CVMODEL2, 'r','LineWidth',1.2);
     legend('V30 Cv', 'Estimated Cv', 'Curve Fit for Data', 'Model 2');
@@ -157,7 +171,6 @@ if Cv_ipa_plots == true
     figure;
 
     subplot(1,2,1);
-    plot(angle_Mipa, cvV60IPA, 'r-x','MarkerSize',5); grid on; hold on;
     plot(angle_Mipa, cvV30IPA, 'b-x','MarkerSize',5); grid on; hold on;
     plot(angle_Mipa, cv2IPA, 'g-x', 'MarkerSize',5);
     xlim([0 90]);
@@ -168,8 +181,10 @@ if Cv_ipa_plots == true
     % Add a curve fit to local Cv to account for phase shift
     CVcoef = polyfit(angle_Mipa, cv2IPA, 4);
     CVMODEL = polyval(CVcoef, 0:1:90);
+    CVMODEL2 = 2.95 ./ (1 + exp(-(angles - 63) / 10));
     plot(0:1:90, CVMODEL, 'm','LineWidth',0.9);
-    legend('V60 Cv', 'V30 Cv', 'Estimated Cv', 'Curve Fit for Data');
+    plot(angles, CVMODEL2, 'r','LineWidth',1.2);
+    legend('V30 Cv', 'Estimated Cv', 'Curve Fit for Data', 'Model');
     title('Cv Comparaison IPA')
     
     % Plot Cvs over time
@@ -196,10 +211,10 @@ if Cv_CMD == true
     figure;
     CvCMD = polyval(TADPOLECv, angle_Cox);
     plot(t, CvCMD, 'r', 'LineWidth', 1); hold on; grid on;
-    plot(t, FF_ox_v3, 'b', 'LineWidth',1);
+    plot(t, FF_ox_v4, 'g', 'LineWidth',1);
     xlabel('Time [s]');
     ylabel('Cv');
     title('Cv vs. Time');
-    legend('Commanded Cv Online', 'FF v3');
+    legend('Commanded Cv Online', 'FF v4');
     ylim([0 3]);
 end

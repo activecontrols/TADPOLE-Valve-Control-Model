@@ -9,7 +9,7 @@ P_tank = 80;
 cvCOEFS = [-0.000000237649393   0.000037435620733  -0.001322241203911   0.015628964005178   0];
 % cvCOEFS = [0.000005320163756   0.000008288008288   0.011123068289735  0];
 % min(9 * t, 90)
-[t, x] = ode45(@(t, x) plantWaterflow(x, min(9 * t, 90), cvCOEFS, P_tank), tspan, x0);
+[t, x] = ode15s(@(t, x) plantWaterflow(x, min(9 * t, 90), cvCOEFS, P_tank), tspan, x0);
 
 %% Plots
 figure;
