@@ -11,15 +11,16 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_tot, thrust)
         120.844, 130.535, 140.262, 150.16, 159.99, 170.243, 180.67, 191.054, 201.631, 212.408, 223.382, 234.368, 245.752, 257.017, 268.529, 280.3, 292.062, 304.129, 316.095, 328.466, 338.509
     ];
 
-    cv_table = [
-        0.000, 0.070, 0.161, 0.378, 0.670, 1.000, 1.450, 2.050, 2.780, 3.710, 4.960;
-        0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90
-    ];
+    % Cv mapping 
+    alpha_OX = 2.50;
+    beta_OX = 58;
+    gamma_OX = 11;
 
-    IN3_TO_GAL = 0.004329;       % convert cubic inches to gallons
-    PER_SEC_TO_PER_MIN = 60;     % convert per second to per minute
-    LB_TO_TON = 0.000453592;     % convert lb to metric tons
-    PER_IN3_TO_PER_M3 = 61023.7; % convert per in^3 to per m^3
+    alpha_IPA = 2.95;
+    beta_IPA = 63;
+    gamma_IPA = 10;
+
+    % Convert
     OF_RATIO = 1.2;              % target OF
 
     %Manifold pressures
@@ -31,6 +32,7 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_tot, thrust)
     ipa_tank_pressure = 820; % psi
     ox_density = 0.04126099537; % lbs / in^3
     ipa_density = 0.02836; % lbs / in^3
+    h2o_density = 0.0361; %lbs / in^3
 
     %Mass Balance
     mdot_ox = mdot_tot / (1 + OF_RATIO) * OF_RATIO;
@@ -39,15 +41,15 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_tot, thrust)
     %Calculations OX
     pressure_delta = ox_tank_pressure - ox_manifold_pressure;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0
-    cvOX = mdot_ox * IN3_TO_GAL * PER_SEC_TO_PER_MIN * sqrt(LB_TO_TON * PER_IN3_TO_PER_M3 / (ox_density * pressure_delta));
+    cvOX = 60/231 * mdot_ox .* sqrt(1 ./ (ox_density * h2o_density * (pressure_delta)));
 
     %Calculations IPA
     pressure_delta = ipa_tank_pressure - ipa_manifold_pressure;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0
-    cvIPA = mdot_ipa * IN3_TO_GAL * PER_SEC_TO_PER_MIN * sqrt(LB_TO_TON * PER_IN3_TO_PER_M3 / (ipa_density * pressure_delta));
+    cvIPA = 60/231 * mdot_ipa .* sqrt(1 ./ (ipa_density * h2o_density * (pressure_delta)));
 
     %Angles
-    valve_ox = clamped_interpolation(cvOX, cv_table);
-    valve_ipa = clamped_interpolation(cvIPA, cv_table);
+    valve_ox = -gamma_OX * log(alpha_OX/ cvOX + 1) + beta_OX;
+    valve_ipa = -gamma_IPA * log(alpha_IPA / cvIPA + 1) + beta_IPA;
     
 end

@@ -28,7 +28,7 @@ Mdot_ipa_plots = false;
 Cv_CMD = true;
 
 %% Initialize data and filter
-dataWf = readmatrix("loxcl10.csv");
+dataWf = readmatrix("HIL1");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -108,9 +108,18 @@ FF_ox_v4 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_a
 %% Plots
 if Mdot_ox_plots == true
     figure;
+    dt = t(end) / size(t, 1);
+    tpast = [mdot_trg_ox(1:floor(0.5 / dt)); mdot_trg_ox];
+    tpast = tpast(1:end-floor(0.5 / dt));
+    tfut = [mdot_trg_ox; mdot_trg_ox(end-floor(0.5 / dt):end)];
+    tfut = tfut(floor(0.5 / dt):end);
+    high_bound = max(tpast, tfut(1:size(t, 1))) + max(mdot_trg_ox) * 0.05;
+    low_bound = min(tpast, tfut(1:size(t, 1))) - max(mdot_trg_ox) * 0.05;
     plot(t, mdot_ox, 'b', 'LineWidth', 1); grid on; hold on;
     plot(t, mdot_trg_ox, 'r', 'LineWidth', 1)
     plot(t, mdot_ox_EST, 'g', 'LineWidth', 1)
+    plot(t, high_bound, 'LineWidth', 1);
+    plot(t, low_bound, 'LineWidth', 1);
     xlabel('Time [s]');
     ylabel('Mass Flow [lbm/s]');
     title('Ox Mass Flow vs. Time');

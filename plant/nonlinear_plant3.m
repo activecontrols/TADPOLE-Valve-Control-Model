@@ -47,8 +47,8 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
     DP_l_ipa = C_fric * l_eq_ipa / (2 * d * g * ipa_density * A_l^2);
 
     % Valve Cvs
-    cvOX = 2.55 ./ (1 + exp(-(angle_ox - 60) / 10));
-    cvIPA = 2.55 ./ (1 + exp(-(angle_ipa - 60) / 10));
+    cvOX = 2.50 ./ (1 + exp(-(angle_ox - 58) / 11));
+    cvIPA = 2.95 ./ (1 + exp(-(angle_ipa - 63) / 10));
 
     % Fluid build up inside line
     mdot_in_ox = 231/60 * cvOX * sqrt(ox_density * water_density * max(P_tank_ox - P_out_ox, 0));
