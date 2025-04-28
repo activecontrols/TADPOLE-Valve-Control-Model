@@ -20,6 +20,10 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     beta_IPA = 63;
     gamma_IPA = 10;
 
+    % Max commands
+    mdot_ox = max(mdot_ox, 0.1);
+    mdot_ipa = max(mdot_ipa, 0.1);
+
     % Convert
     OF_RATIO = 1.2;              % target OF
 
@@ -28,32 +32,33 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     %ipa_manifold_pressure = clamped_interpolation(thrust, ipa_manifold_table);
 
     %Fuel Data
-    ox_tank_pressure = 820; % psi
-    ipa_tank_pressure = 820; % psi
+    ox_tank_pressure = 600; % psi
+    ipa_tank_pressure = 700; % psi
     ox_density = 0.04126099537; % lbs / in^3
     ipa_density = 0.02836; % lbs / in^3
     h2o_density = 0.0361; %lbs / in^3
     g = 32.174 * 12;
-    C_d = 0.7;
+    C_do = 0.5;
+    C_di = 0.5;
     A_io = 0.04031006898;                   %in^2
     A_if = 0.04875965463;                   %in^2
 
     % Injector pressure drop
-    DP_io = 1 / (2 * ox_density * g *(C_d * A_io)^2);
-    DP_if = 1 / (2 * ipa_density * g *(C_d * A_if)^2);
+    DP_io = 1 / (2 * ox_density * g *(C_do * A_io)^2);
+    DP_if = 1 / (2 * ipa_density * g *(C_di * A_if)^2);
     
     %Calculations OX
-    pressure_delta = ox_tank_pressure - chamber_pressure;
+    pressure_delta = ox_tank_pressure - chamber_pressure - DP_io * mdot_ox^2;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0
-    cvOX = 60/231 * mdot_ox .* sqrt(1 ./ (ox_density * h2o_density * (pressure_delta - DP_io * mdot_ox^2)));
+    cvOX = 60/231 * mdot_ox .* sqrt(1 ./ (ox_density * h2o_density * (pressure_delta)));
 
     %Calculations IPA
-    pressure_delta = ipa_tank_pressure - chamber_pressure;
+    pressure_delta = ipa_tank_pressure - chamber_pressure - DP_if * mdot_ipa^2;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0
-    cvIPA = 60/231 * mdot_ipa .* sqrt(1 ./ (ipa_density * h2o_density * (pressure_delta - DP_if * mdot_ipa^2)));
+    cvIPA = 60/231 * mdot_ipa .* sqrt(1 ./ (ipa_density * h2o_density * (pressure_delta)));
 
     %Angles
-    valve_ox = -gamma_OX * log(alpha_OX/ cvOX + 1) + beta_OX;
-    valve_ipa = -gamma_IPA * log(alpha_IPA / cvIPA + 1) + beta_IPA;
+    valve_ox = max(-gamma_OX * log(alpha_OX/ cvOX + 1) + beta_OX, 15);
+    valve_ipa = max(-gamma_IPA * log(alpha_IPA / cvIPA + 1) + beta_IPA, 15);
     
 end

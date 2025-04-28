@@ -52,14 +52,14 @@ double ipa_manifold_table[2][INTERPOLATION_TABLE_LENGTH] = {
 Sensor_Data default_sensor_data{
     100, // psi
     {
-        820, // psi
+        600, // psi
         0,   // psi - not needed for OL
         0,   // psi - not needed for OL
         90,  // Kelvin
         90,  // Kelvin
     },
     {
-        820, // psi
+        700, // psi
         0,   // psi - not needed for OL
         0,   // psi - not needed for OL
     }};
@@ -132,10 +132,10 @@ void mass_balance(double total_mass_flow, double *mass_flow_ox, double *mass_flo
 // OUTPUT: valve flow coefficient (assume this is unitless)
 // INPUT: mass_flow (lbm/s), downstream pressure (psi), fluid properties
 double sub_critical_cv(double mass_flow, double upstream_pressure, double downstream_pressure, double density) {
-  double K = 1.75;
-  double pipe_area = 0.127;
-  double correction_factor = pow(mass_flow, 2) / (2 * density * pow(K, 2) * pow(pipe_area, 2));
-  double pressure_delta = upstream_pressure - downstream_pressure - correction_factor;
+  double K = 0.7;
+  double pipe_area = 0.044;
+  double correction_factor = pow(mass_flow, 2) / (2 * density * GRAVITY_FT_S * 12 * pow(K, 2) * pow(pipe_area, 2));
+  double pressure_delta = upstream_pressure - downstream_pressure; //- correction_factor;
   pressure_delta = pressure_delta > 0 ? pressure_delta : 0.0001; // block negative under sqrt and divide by 0
   return mass_flow * IN3_TO_GAL * PER_SEC_TO_PER_MIN * sqrt(1 / (pressure_delta * density * DENSITY_WATER));
 }

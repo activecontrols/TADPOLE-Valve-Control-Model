@@ -1,18 +1,17 @@
-function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
+function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode, ox_tank, ipa_tank)
 
     %States
-    distMode = 0;
-    mdot_ox = x(1) * (1 + distMode* (0.01 + 0.01 * sin(2*t)));
-    mdot_ipa = x(2) * (1 + distMode* (0.01 + 0.01 * sin(2*t)));
-    Pc = x(3) * (1 + distMode* (0.01 + 0.01 * sin(2*t)));
+    mdot_ox = x(1);
+    mdot_ipa = x(2);
+    Pc = x(3) * (1 - 0.1 * (20 - t)/20);
     P_out_ox = x(4);
     P_out_ipa = x(5);
+    valve_ox = x(6);
+    valve_ipa = x(7);
 
     %% PARAMS
-    distMode = 0;
-    t = 0;
-    P_tank_ox = 820 + distMode * 2*sin(100*t); % psi, with disturbance
-    P_tank_ipa = 820 + distMode * 2*sin(155*t); % psi, with disturbance
+    P_tank_ox = ox_tank * (1 - 0.1 * (20 - t)/20); % psi, with disturbance
+    P_tank_ipa = ipa_tank * (1 - 0.1 * (20 - t)/20); % psi, with disturbance
     ox_density = 71.1936 / 1728; %lb/in^3
     ipa_density = 49.06838 / 1728; %lb/in^3
     water_density = 0.0361;     %lb/in^3
@@ -25,13 +24,13 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
     R = R_u / 18.8;                         %psi*ft^3*lb/mol/°R 
     T_c = tempfcn(OF);                      %Rankine
     g = 32.174 * 12;                        %in/s
-    cstar = fcn_cstar(OF);                  %ft/s
+    cstar = fcn_cstar(OF, Pc);              %ft/s
     d = (0.5 - 2*0.065);                    %diameter of line
     A_l = pi * (d / 2)^2;                   %in^2
-    l_f = 120;                              %in
-    l_o = 240;                              %in
-    A_io = 0.04031006898;                   %in^2
-    A_if = 0.04875965463;                   %in^2
+    l_f = 600;                              %in
+    l_o = 1200;                              %in
+    A_if = 0.04031006898;                   %in^2
+    A_io = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
     C_d = 0.7;                              %injector coef
     l_eq_ox = 7;                            %eq line length ox
@@ -47,15 +46,15 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
     DP_l_ipa = C_fric * l_eq_ipa / (2 * d * g * ipa_density * A_l^2);
 
     % Valve Cvs
-    cvOX = 2.50 ./ (1 + exp(-(angle_ox - 58) / 11));
-    cvIPA = 2.95 ./ (1 + exp(-(angle_ipa - 63) / 10));
+    cvOX = 2.50 ./ (1 + exp(-(valve_ox - 58) / 11));
+    cvIPA = 2.95 ./ (1 + exp(-(valve_ipa - 63) / 10));
 
     % Fluid build up inside line
     mdot_in_ox = 231/60 * cvOX * sqrt(ox_density * water_density * max(P_tank_ox - P_out_ox, 0));
     mdot_in_ipa = 231/60 * cvIPA * sqrt(ipa_density * water_density * max(P_tank_ipa - P_out_ipa, 0));
     
     % State Derivative
-    xdot = zeros(5,1);
+    xdot = zeros(7,1);
 
     %% ODEs
 
@@ -64,6 +63,8 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode)
     xdot(3) = (R * T_c / V_c)*(mdot_ox + mdot_ipa - A_t*(g /12) / cstar * Pc); 
     xdot(4) = R * 162 / V_lo * (mdot_in_ox - mdot_ox);
     xdot(5) = R * 527 / V_lf * (mdot_in_ipa - mdot_ipa);
+    xdot(6) = (-valve_ox + angle_ox) / 0.001;
+    xdot(7) = (-valve_ipa + angle_ipa) / 0.001;
 
 end
 

@@ -23,12 +23,13 @@ TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
 
 Cv_ox_plots = true;
 Cv_ipa_plots = false;
-Mdot_ox_plots = true;
+Mdot_ox_plots = false;
 Mdot_ipa_plots = false;
-Cv_CMD = true;
+Cv_CMD = false;
+controller_plots = false;
 
 %% Initialize data and filter
-dataWf = readmatrix("HIL1");
+dataWf = readmatrix("loxcv9");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -54,6 +55,11 @@ P_up_ipa = dataF(:, 21);
 P_dw_ipa = dataF(:, 22);
 P_out_ipa = dataF(:, 23);
 
+OX_Integral = dataF(:, 27);
+IPA_Integral = dataF(:, 29);
+OX_FF = dataF(:, 34);
+IPA_FF = dataF(:, 35);
+
 % Venturi dimensions
 A_th_ox = 0.0203;
 A_in = 0.127;
@@ -75,6 +81,8 @@ cvV30IPA = polyval(V30C, angle_Mipa);
 DPValveOX = max((P_up_ox - P_dw_ox), 1e-3);
 DPValveIPA = max((P_up_ipa - P_dw_ipa), 1e-3);
 DPVenturiOX = max(P_dw_ox - P_out_ox, 0);
+cor1 = mean(DPVenturiOX(1:30), 1);
+DPVenturiOX = max(DPVenturiOX - cor1, 0);
 mdot_ox_EST = A_th_ox .* sqrt(2 * rhoFluid * DPVenturiOX * g ./ (1 - (A_th_ox / A_in)^2));
 
 % Modify when using a diffrent fluid. Change density and can't assume SG of 1.
@@ -117,13 +125,13 @@ if Mdot_ox_plots == true
     low_bound = min(tpast, tfut(1:size(t, 1))) - max(mdot_trg_ox) * 0.05;
     plot(t, mdot_ox, 'b', 'LineWidth', 1); grid on; hold on;
     plot(t, mdot_trg_ox, 'r', 'LineWidth', 1)
-    plot(t, mdot_ox_EST, 'g', 'LineWidth', 1)
+    % plot(t, mdot_ox_EST, 'g', 'LineWidth', 1)
     plot(t, high_bound, 'LineWidth', 1);
     plot(t, low_bound, 'LineWidth', 1);
     xlabel('Time [s]');
     ylabel('Mass Flow [lbm/s]');
     title('Ox Mass Flow vs. Time');
-    legend('Mass Flow', 'Target', 'Offline MDOT');
+    legend('Mass Flow', 'Target', 'High Bound', 'Low Bound');
 end
 if Mdot_ipa_plots == true
     figure;
@@ -136,41 +144,37 @@ if Mdot_ipa_plots == true
 end
 if Cv_ox_plots == true
     figure;
-
-    subplot(1,2,1);
-    plot(angle_Mox, cvV30OX, 'b-x','MarkerSize',5); grid on; hold on;
-    plot(angle_Mox, cv2OX, 'g-x', 'MarkerSize',5);
+    plot(angle_Mox, cv2OX, 'b-x', 'MarkerSize', 4);
     xlim([0 90]);
-    ylim([0 6]);
+    ylim([0 4]);
     xlabel('Valve Angle OX [deg]');
     ylabel('Cv');
+    hold on; grid on;
     
     % Add a curve fit to local Cv to account for phase shift
-    CVcoef = polyfit(angle_Mox, cv2OX, 5);
+    CVcoef = polyfit(angle_Mox, cv2OX, 4);
     angles = 0:1:90;
     CVMODEL = polyval(CVcoef, angles);
+
+    % Make sure polynomial fit is always increasing
+    for i = angles
+        upperbound = min(i + 2, length(angles));
+        CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
+    end
+
     CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
-    plot(angles, CVMODEL, 'm','LineWidth',0.9);
-    plot(angles, CVMODEL2, 'r','LineWidth',1.2);
-    legend('V30 Cv', 'Estimated Cv', 'Curve Fit for Data', 'Model 2');
+    plot(angles, CVMODEL, 'm','LineWidth',1.5);
+    plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
+    legend('Estimated Cv', 'Angle to Cv Mapping');
     title('Cv Comparaison OX')
-    
-    % Plot Cvs over time
-    subplot(1,2,2);
-    localCv = polyval(TADPOLECv, angle_Mox);
-    plot(t, cvV60OX, 'r', 'LineWidth', 1); hold on; grid on;
-    plot(t, cvV30OX, 'b', 'LineWidth', 1); hold on; grid on;
-    plot(t, localCv, 'g', 'LineWidth',1);
-    xlabel('Time [s]');
-    ylabel('Cv');
-    title('OX Valve Cv vs. Time');
-    legend('V60 Cv','V30 Cv', 'Estimated Cv');
-    sgtitle('OX Cv Estimation Data');
-    
+    hold off;
+    fprintf("Interpolation Table for LOX Cv: \n")
+    disp([0:6:90; CVMODEL(1:6:91)]);
+       
     % Plot CMD angle vs Measured Angle
     figure;
     plot(t, angle_Cox, 'r', 'LineWidth', 1); hold on; grid on;
-    plot(t, angle_Mox, 'g', 'LineWidth',1);
+    plot(t, angle_Mox, 'b', 'LineWidth',1);
     xlabel('Time [s]');
     ylabel('Valve Angle [deg]');
     title('OX Angle vs. Time');
@@ -178,35 +182,32 @@ if Cv_ox_plots == true
 end
 if Cv_ipa_plots == true
     figure;
-
-    subplot(1,2,1);
-    plot(angle_Mipa, cvV30IPA, 'b-x','MarkerSize',5); grid on; hold on;
-    plot(angle_Mipa, cv2IPA, 'g-x', 'MarkerSize',5);
+    plot(angle_Mipa, cv2IPA, 'b-x', 'MarkerSize',5);
     xlim([0 90]);
-    ylim([0 6]);
+    ylim([0 4]);
     xlabel('Valve Angle IPA [deg]');
     ylabel('Cv');
+    hold on; grid on;
     
     % Add a curve fit to local Cv to account for phase shift
-    CVcoef = polyfit(angle_Mipa, cv2IPA, 4);
+    CVcoef = polyfit(angle_Mipa, cv2IPA, 5);
+    angles = 0:1:90;
     CVMODEL = polyval(CVcoef, 0:1:90);
+
+    % Make sure polynomial fit is always increasing
+    for i = angles
+        upperbound = min(i + 2, length(angles));
+        CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
+    end
     CVMODEL2 = 2.95 ./ (1 + exp(-(angles - 63) / 10));
-    plot(0:1:90, CVMODEL, 'm','LineWidth',0.9);
-    plot(angles, CVMODEL2, 'r','LineWidth',1.2);
-    legend('V30 Cv', 'Estimated Cv', 'Curve Fit for Data', 'Model');
+    plot(0:1:90, CVMODEL, 'm','LineWidth',1.5);
+    plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
+    legend('Estimated Cv', 'Angle to Cv Mapping');
     title('Cv Comparaison IPA')
-    
-    % Plot Cvs over time
-    subplot(1,2,2);
-    plot(t, cvV60IPA, 'r', 'LineWidth', 1); hold on; grid on;
-    plot(t, cvV30IPA, 'b', 'LineWidth', 1); hold on; grid on;
-    plot(t, cv2IPA, 'g', 'LineWidth',1);
-    xlabel('Time [s]');
-    ylabel('Cv');
-    title('IPA Valve Cv vs. Time');
-    legend('V60 Cv','V30 Cv', 'Estimated Cv');
-    sgtitle('IPA Cv Estimation Data');
-    
+    hold off
+    fprintf("Interpolation Table for IPA Cv: \n")
+    disp([0:6:90; CVMODEL(1:6:91)]);
+ 
     % Plot CMD angle vs Measured Angle
     figure;
     plot(t, angle_Cipa, 'r', 'LineWidth', 1); hold on; grid on;
@@ -226,4 +227,14 @@ if Cv_CMD == true
     title('Cv vs. Time');
     legend('Commanded Cv Online', 'FF v4');
     ylim([0 3]);
+end
+if controller_plots == true
+    figure;
+    plot(t, OX_FF ./ (OX_FF + abs(OX_Integral)) * 100, 'r', 'LineWidth', 2); hold on; grid on;
+    plot(t, abs(OX_Integral) ./ (OX_FF + abs(OX_Integral)) * 100, 'b', 'LineWidth', 2);
+    xlabel('Time [s]');
+    ylabel('Percent of Control Action [%]');
+    title('Control Action');
+    legend('Feedforward', 'Feedback Trim');
+    hold off
 end

@@ -10,17 +10,20 @@ addpath('lib')
 %Delays and noise
 actuator_delay = 0.1131;
 noise_T = 1/150;
-noise_var_pc = 0.5e-20;
-noise_var_mdot = 2e-12;
-noise_var_pout = 0.55e-20;
+noise_var_pc = 0.55e-2;
+noise_var_mdot = 1e-5;
+noise_var_pout = 0.75e-2;
 
 timeDelta = 1/5000;         % seconds
-timeDeltaCMD = 1/250;       % seconds
-timeDeltaOUT = 1/1000;      % seconds
+timeDeltaCMD = 1/1000;       % seconds
+timeDeltaOUT = 1/200;        % seconds
 
-deadtime_mdot = 0;          % seconds
-deadtime_Pc = 0.04;         % seconds
-deadtime_valve = 0.02;      % seconds
+deadtime_mdot = 0.02;       % seconds
+deadtime_Pc = 0.05;         % seconds
+deadtime_valve = 0.35;      % seconds
+
+ox_tank = 600;              % psi
+ipa_tank = 700;             % psi
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
@@ -39,7 +42,8 @@ cf_table = [
 ];
 
 % Initial Condition for Simulink
-x0 = [0 1e-6 0 0 0];
+x0 = [0 1e-6 0 0 0 52 51];
+fprintf("Code ready! \n")
 
 %% Load Simulink Model
 model = 'TADPOLE_Closed_Loop_NEWPLANT';
