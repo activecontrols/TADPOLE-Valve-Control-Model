@@ -10,9 +10,9 @@ addpath('lib')
 %Delays and noise
 actuator_delay = 0.1131;
 noise_T = 1/150;
-noise_var_pc = 0.55e-2;
-noise_var_mdot = 1e-5;
-noise_var_pout = 0.75e-2;
+noise_var_pc = 1e-20; %0.55e-2;
+noise_var_mdot = 1e-20; %1e-5;
+noise_var_pout = 1e-20; %0.75e-2;
 
 timeDelta = 1/5000;         % seconds
 timeDeltaCMD = 1/1000;       % seconds

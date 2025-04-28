@@ -38,14 +38,14 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     ipa_density = 49.06838 / 1728; % lbs / in^3
     h2o_density = 0.0361; %lbs / in^3
     g = 32.174 * 12;
-    C_do = 0.35;
+    C_do = 0.56;
     C_di = 0.72;
     A_if = 0.04031006898;                   %in^2
     A_io = 0.04875965463;                   %in^2
 
     % Injector pressure drop
-    DP_io = 1 / (2 * ox_density * g *(C_do * A_io)^2);
-    DP_if = 1 / (2 * ipa_density * g *(C_di * A_if)^2);
+    DP_io = 1 / (2 * ox_density * g * (C_do * A_io)^2);
+    DP_if = 1 / (2 * ipa_density * g * (C_di * A_if)^2);
 
     %Calculations OX
     pressure_delta = ox_tank_pressure - chamber_pressure - DP_io * mdot_ox^2;
@@ -58,7 +58,7 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     cvIPA = 60/231 * mdot_ipa .* sqrt(1 ./ (ipa_density * h2o_density * (pressure_delta)));
 
     %Angles
-    valve_ox = max(-gamma_OX * log(alpha_OX/ cvOX + 1) + beta_OX, 15);
-    valve_ipa = max(-gamma_IPA * log(alpha_IPA / cvIPA + 1) + beta_IPA, 15);
+    valve_ox = max(-gamma_OX * log(alpha_OX/ cvOX - 1) + beta_OX, 15);
+    valve_ipa = max(-gamma_IPA * log(alpha_IPA / cvIPA - 1) + beta_IPA, 15);
     
 end

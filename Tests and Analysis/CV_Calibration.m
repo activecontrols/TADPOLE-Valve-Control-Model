@@ -40,25 +40,25 @@ dataF = dataF(1:rows, :);
 %% Extract data
 angle_Mox = dataWf(:, 6) * 360;
 angle_Cox = dataWf(:, 4) * 360;
-angle_Mipa = dataWf(:, 11) * 360;
+angle_Mipa = dataWf(:, 10) * 360;
 angle_Cipa = dataWf(:, 5) * 360;
 
-mdot_ox = dataF(:, 30);
-mdot_ipa = dataF(:, 31);
-mdot_trg_ox = dataWf(:, 32);
-mdot_trg_ipa = dataWf(:, 33);
+mdot_ox = dataF(:, 29);
+mdot_ipa = dataF(:, 30);
+mdot_trg_ox = dataWf(:, 31);
+mdot_trg_ipa = dataWf(:, 32);
 
-P_up_ox = dataF(:, 16);
-P_dw_ox = dataF(:, 17);
-P_out_ox = dataF(:, 18);
-P_up_ipa = dataF(:, 21);
-P_dw_ipa = dataF(:, 22);
-P_out_ipa = dataF(:, 23);
+P_up_ox = dataF(:, 15);
+P_dw_ox = dataF(:, 16);
+P_diff_ox = dataF(:, 17);
+P_up_ipa = dataF(:, 20);
+P_dw_ipa = dataF(:, 21);
+P_diff_ipa = dataF(:, 22);
 
-OX_Integral = dataF(:, 27);
-IPA_Integral = dataF(:, 29);
-OX_FF = dataF(:, 34);
-IPA_FF = dataF(:, 35);
+OX_Integral = dataF(:, 26);
+IPA_Integral = dataF(:, 28);
+OX_FF = dataF(:, 33);
+IPA_FF = dataF(:, 34);
 
 % Venturi dimensions
 A_th_ox = 0.0203;
@@ -80,7 +80,7 @@ cvV30IPA = polyval(V30C, angle_Mipa);
 % here.
 DPValveOX = max((P_up_ox - P_dw_ox), 1e-3);
 DPValveIPA = max((P_up_ipa - P_dw_ipa), 1e-3);
-DPVenturiOX = max(P_dw_ox - P_out_ox, 0);
+DPVenturiOX = max(P_diff_ox, 0);
 cor1 = mean(DPVenturiOX(1:30), 1);
 DPVenturiOX = max(DPVenturiOX - cor1, 0);
 mdot_ox_EST = A_th_ox .* sqrt(2 * rhoFluid * DPVenturiOX * g ./ (1 - (A_th_ox / A_in)^2));

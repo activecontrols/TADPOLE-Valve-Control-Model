@@ -10,11 +10,11 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode, ox_tank, i
     valve_ipa = x(7);
 
     %% PARAMS
-    P_tank_ox = ox_tank; % *(1 - 0.1 * (20 - t)/20); % psi, with disturbance
-    P_tank_ipa = ipa_tank; %* (1 - 0.1 * (20 - t)/20); % psi, with disturbance
-    ox_density = 71.1936 / 1728; %lb/in^3
-    ipa_density = 49.06838 / 1728; %lb/in^3
-    water_density = 0.0361;     %lb/in^3
+    P_tank_ox = ox_tank;                % *(1 - 0.1 * (20 - t)/20); % psi, with disturbance
+    P_tank_ipa = ipa_tank;              %* (1 - 0.1 * (20 - t)/20); % psi, with disturbance
+    ox_density = 71.1936 / 1728;        %lb/in^3
+    ipa_density = 49.06838 / 1728;      %lb/in^3
+    water_density = 0.0361;             %lb/in^3
 
     OF = mdot_ox / max(mdot_ipa, 1e-10);
 
@@ -32,7 +32,7 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode, ox_tank, i
     A_if = 0.04031006898;                   %in^2
     A_io = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
-    C_do = 0.35;                            %injector coef
+    C_do = 0.56;                            %injector coef
     C_df = 0.72;
     l_eq_ox = 7;                            %eq line length ox
     l_eq_ipa = 7;                           %eq line length ipa
