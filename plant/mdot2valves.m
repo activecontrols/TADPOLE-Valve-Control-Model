@@ -35,18 +35,18 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     ox_tank_pressure = 600; % psi
     ipa_tank_pressure = 700; % psi
     ox_density = 0.04126099537; % lbs / in^3
-    ipa_density = 0.02836; % lbs / in^3
+    ipa_density = 49.06838 / 1728; % lbs / in^3
     h2o_density = 0.0361; %lbs / in^3
     g = 32.174 * 12;
-    C_do = 0.5;
-    C_di = 0.5;
-    A_io = 0.04031006898;                   %in^2
-    A_if = 0.04875965463;                   %in^2
+    C_do = 0.35;
+    C_di = 0.72;
+    A_if = 0.04031006898;                   %in^2
+    A_io = 0.04875965463;                   %in^2
 
     % Injector pressure drop
     DP_io = 1 / (2 * ox_density * g *(C_do * A_io)^2);
     DP_if = 1 / (2 * ipa_density * g *(C_di * A_if)^2);
-    
+
     %Calculations OX
     pressure_delta = ox_tank_pressure - chamber_pressure - DP_io * mdot_ox^2;
     pressure_delta = max(0, pressure_delta); % block negative under sqrt and divide by 0

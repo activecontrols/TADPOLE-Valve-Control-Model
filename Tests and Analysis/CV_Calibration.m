@@ -63,7 +63,7 @@ IPA_FF = dataF(:, 35);
 % Venturi dimensions
 A_th_ox = 0.0203;
 A_in = 0.127;
-rhoFluid = 0.036;
+rhoFluid = 0.036;       
 rhoWat = 0.036;
 
 % Constants
@@ -90,7 +90,7 @@ Kf = 1.355;        % Tunable parameter (In the 1.33-1.37 range).
 P_atm = 14.3;        % Tecnically just the backpressure on the valve.
                      % this becomes Pc in a real test.
 
-cv2OX = mdot_ox_EST / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoFluid * rhoWat));
+cv2OX = mdot_ox / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoFluid * rhoWat));
 cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoFluid * rhoWat));
 
 % Old feedforward command
@@ -162,9 +162,9 @@ if Cv_ox_plots == true
         CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
     end
 
-    CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
+    %CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
     plot(angles, CVMODEL, 'm','LineWidth',1.5);
-    plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
+    %plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
     legend('Estimated Cv', 'Angle to Cv Mapping');
     title('Cv Comparaison OX')
     hold off;
@@ -199,9 +199,9 @@ if Cv_ipa_plots == true
         upperbound = min(i + 2, length(angles));
         CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
     end
-    CVMODEL2 = 2.95 ./ (1 + exp(-(angles - 63) / 10));
+    %CVMODEL2 = 2.95 ./ (1 + exp(-(angles - 63) / 10));
     plot(0:1:90, CVMODEL, 'm','LineWidth',1.5);
-    plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
+    %plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
     legend('Estimated Cv', 'Angle to Cv Mapping');
     title('Cv Comparaison IPA')
     hold off

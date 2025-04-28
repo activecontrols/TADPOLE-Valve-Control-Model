@@ -3,15 +3,15 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode, ox_tank, i
     %States
     mdot_ox = x(1);
     mdot_ipa = x(2);
-    Pc = x(3) * (1 - 0.1 * (20 - t)/20);
+    Pc = x(3); % * (1 - 0.1 * (20 - t)/20);
     P_out_ox = x(4);
     P_out_ipa = x(5);
     valve_ox = x(6);
     valve_ipa = x(7);
 
     %% PARAMS
-    P_tank_ox = ox_tank * (1 - 0.1 * (20 - t)/20); % psi, with disturbance
-    P_tank_ipa = ipa_tank * (1 - 0.1 * (20 - t)/20); % psi, with disturbance
+    P_tank_ox = ox_tank; % *(1 - 0.1 * (20 - t)/20); % psi, with disturbance
+    P_tank_ipa = ipa_tank; %* (1 - 0.1 * (20 - t)/20); % psi, with disturbance
     ox_density = 71.1936 / 1728; %lb/in^3
     ipa_density = 49.06838 / 1728; %lb/in^3
     water_density = 0.0361;     %lb/in^3
@@ -32,17 +32,18 @@ function xdot = nonlinear_plant3(x, angle_ox, angle_ipa, t, distMode, ox_tank, i
     A_if = 0.04031006898;                   %in^2
     A_io = 0.04875965463;                   %in^2
     C_fric = 0.03;                          %line friction coef
-    C_d = 0.7;                              %injector coef
+    C_do = 0.35;                            %injector coef
+    C_df = 0.72;
     l_eq_ox = 7;                            %eq line length ox
     l_eq_ipa = 7;                           %eq line length ipa
     V_lo = A_l * l_eq_ox;
     V_lf = A_l * l_eq_ox;
     
     % Line and injector pressure drops
-    DP_i_ox = 1 / (2 * ox_density * g *(C_d * A_io)^2);
+    DP_i_ox = 1 / (2 * ox_density * g *(C_do * A_io)^2);
     DP_l_ox = C_fric * l_eq_ox / (2 * d * g * ox_density * A_l^2);
 
-    DP_i_ipa = 1 / (2 * ipa_density * g *(C_d * A_if)^2);
+    DP_i_ipa = 1 / (2 * ipa_density * g *(C_df * A_if)^2);
     DP_l_ipa = C_fric * l_eq_ipa / (2 * d * g * ipa_density * A_l^2);
 
     % Valve Cvs
