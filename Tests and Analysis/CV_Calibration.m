@@ -21,7 +21,7 @@ V60C = polyfit(V60(1,:), V60(2,:), 3);
 TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
 %% Settings
 
-Cv_ox_plots = true;
+Cv_ox_plots = false;
 Cv_ipa_plots = false;
 Mdot_ox_plots = false;
 Mdot_ipa_plots = false;
@@ -29,7 +29,7 @@ Cv_CMD = false;
 controller_plots = false;
 
 %% Initialize data and filter
-dataWf = readmatrix("loxcv9");
+dataWf = readmatrix("IPA FF");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -54,64 +54,53 @@ P_diff_ox = dataF(:, 17);
 P_up_ipa = dataF(:, 20);
 P_dw_ipa = dataF(:, 21);
 P_diff_ipa = dataF(:, 22);
+Pc = dataF(:, 14);
 
 OX_Integral = dataF(:, 26);
 IPA_Integral = dataF(:, 28);
 OX_FF = dataF(:, 33);
 IPA_FF = dataF(:, 34);
 
-% Venturi dimensions
-A_th_ox = 0.0203;
-A_in = 0.127;
+% Constants
+g = 32.17 * 12;
 rhoFluid = 0.036;       
 rhoWat = 0.036;
 
-% Constants
-g = 32.17 * 12;
-
-% Cv and Mass Flow Estimation
-cvV60OX = polyval(V60C, angle_Mox);
-cvV30OX = polyval(V30C, angle_Mox);
-cvV60IPA = polyval(V60C, angle_Mipa);
-cvV30IPA = polyval(V30C, angle_Mipa);
-
-% Estimate one massflow locally to make sure code estimation is fine. Plot
-% manually if needed. Code uses the massflow estimated in the loop, not
-% here.
+% Pressure estimations
 DPValveOX = max((P_up_ox - P_dw_ox), 1e-3);
 DPValveIPA = max((P_up_ipa - P_dw_ipa), 1e-3);
-DPVenturiOX = max(P_diff_ox, 0);
-cor1 = mean(DPVenturiOX(1:30), 1);
-DPVenturiOX = max(DPVenturiOX - cor1, 0);
-mdot_ox_EST = A_th_ox .* sqrt(2 * rhoFluid * DPVenturiOX * g ./ (1 - (A_th_ox / A_in)^2));
+rhoOX = 0.0455;
+rhoIPA = 0.02836; %49.06838 / 1728;
 
-% Modify when using a diffrent fluid. Change density and can't assume SG of 1.
-Kf = 1.355;        % Tunable parameter (In the 1.33-1.37 range).
-P_atm = 14.3;        % Tecnically just the backpressure on the valve.
-                     % this becomes Pc in a real test.
+cv2OX = mdot_ox / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoOX * rhoWat));
+cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoIPA * rhoWat));
 
-cv2OX = mdot_ox / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoFluid * rhoWat));
-cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoFluid * rhoWat));
+% Feeforward Controller
+C_d_IPA = 0.69;
+C_d_OX = 0.35;
+A_if = 0.04031;       % 0.0498 OX || 0.04031 IPA;
+A_io = 0.0498;
 
-% Old feedforward command
-FF_ox = mdot_trg_ox / rhoFluid / 231 * 60 .* sqrt(1 ./ DPValveOX);
+DP_if = 1 / (2 * rhoIPA * g *(C_d_IPA * A_if)^2);
+DP_io = 1 / (2 * rhoOX * g *(C_d_OX * A_io)^2); 
 
-% Retuned feedforward command
-FF_ox_v3 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_atm - ...
-            mdot_trg_ox.^2 / (2 * rhoFluid * (Kf * A_in)^2))));
+% APPROX CV MAPPING 
+alpha_OX = 2.50;
+beta_OX = 58;
+gamma_OX = 11;
 
-% Feeforward V4
-C_fric = 0.03;
-d = 0.35;
-C_d = 0.084;
-l = 10;
+alpha_IPA = 2.95;
+beta_IPA = 63;
+gamma_IPA = 10;
 
-DP_i = 1 / (2 * rhoFluid * g *(C_d * A_in)^2);
-%DP_l = C_fric * l / (2 * d * g * rhoFluid * A_in^2);
-%DPVenturi = (1 - (A_th_ox / A_in)^2) / (2 * A_th_ox^2 * rhoFluid * g);
+% Feedforward
+DP = max(P_up_ox - Pc - (DP_io) * mdot_trg_ox .^2, 0);
+FF_ox = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoOX * rhoWat * DP));
+valve_ox = min(max(-gamma_OX * log(alpha_OX ./ FF_ox - 1) + beta_OX, 15), 90);
 
-FF_ox_v4 = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoFluid * rhoWat * (P_up_ox - P_atm - ...
-            (DP_i) * mdot_trg_ox .^2)));
+DP = max(P_up_ipa - Pc - (DP_if) * mdot_trg_ipa .^2, 0);
+FF_ipa = 60/231 * mdot_trg_ipa .* sqrt(1 ./ (rhoIPA * rhoWat * DP));
+valve_ipa = min(max(-gamma_IPA * log(alpha_IPA ./ FF_ipa - 1) + beta_IPA, 15), 90);
 
 %% Plots
 if Mdot_ox_plots == true
@@ -135,12 +124,21 @@ if Mdot_ox_plots == true
 end
 if Mdot_ipa_plots == true
     figure;
+    dt = t(end) / size(t, 1);
+    tpast = [mdot_trg_ipa(1:floor(0.5 / dt)); mdot_trg_ipa];
+    tpast = tpast(1:end-floor(0.5 / dt));
+    tfut = [mdot_trg_ipa; mdot_trg_ipa(end-floor(0.5 / dt):end)];
+    tfut = tfut(floor(0.5 / dt):end);
+    high_bound = max(tpast, tfut(1:size(t, 1))) + max(mdot_trg_ipa) * 0.05;
+    low_bound = min(tpast, tfut(1:size(t, 1))) - max(mdot_trg_ipa) * 0.05;
     plot(t, mdot_ipa, 'b', 'LineWidth', 1); grid on; hold on;
     plot(t, mdot_trg_ipa, 'r', 'LineWidth', 1)
+    plot(t, high_bound, 'LineWidth', 1);
+    plot(t, low_bound, 'LineWidth', 1);
     xlabel('Time [s]');
     ylabel('Mass Flow [lbm/s]');
     title('IPA Mass Flow vs. Time');
-    legend('Mass Flow', 'Target');
+    legend('Mass Flow', 'Target', 'High Bound', 'Low Bound');
 end
 if Cv_ox_plots == true
     figure;
@@ -157,10 +155,10 @@ if Cv_ox_plots == true
     CVMODEL = polyval(CVcoef, angles);
 
     % Make sure polynomial fit is always increasing
-    for i = angles
-        upperbound = min(i + 2, length(angles));
-        CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
-    end
+    % for i = angles
+    %     upperbound = min(i + 2, length(angles));
+    %     CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
+    % end
 
     %CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
     plot(angles, CVMODEL, 'm','LineWidth',1.5);
@@ -194,21 +192,14 @@ if Cv_ipa_plots == true
     angles = 0:1:90;
     CVMODEL = polyval(CVcoef, 0:1:90);
 
-    % Make sure polynomial fit is always increasing
-    for i = angles
-        upperbound = min(i + 2, length(angles));
-        CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
-    end
-    %CVMODEL2 = 2.95 ./ (1 + exp(-(angles - 63) / 10));
     plot(0:1:90, CVMODEL, 'm','LineWidth',1.5);
-    %plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
     legend('Estimated Cv', 'Angle to Cv Mapping');
     title('Cv Comparaison IPA')
     hold off
     fprintf("Interpolation Table for IPA Cv: \n")
     disp([0:6:90; CVMODEL(1:6:91)]);
  
-    % Plot CMD angle vs Measured Angle
+    %% Plot CMD angle vs Measured Angle
     figure;
     plot(t, angle_Cipa, 'r', 'LineWidth', 1); hold on; grid on;
     plot(t, angle_Mipa, 'g', 'LineWidth',1);
@@ -221,7 +212,7 @@ if Cv_CMD == true
     figure;
     CvCMD = polyval(TADPOLECv, angle_Cox);
     plot(t, CvCMD, 'r', 'LineWidth', 1); hold on; grid on;
-    plot(t, FF_ox_v4, 'g', 'LineWidth',1);
+    plot(t, FF_ox, 'g', 'LineWidth',1);
     xlabel('Time [s]');
     ylabel('Cv');
     title('Cv vs. Time');
