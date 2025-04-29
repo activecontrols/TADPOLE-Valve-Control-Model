@@ -21,9 +21,9 @@ V60C = polyfit(V60(1,:), V60(2,:), 3);
 TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
 %% Settings
 
-Cv_ox_plots = false;
+Cv_ox_plots = true;
 Cv_ipa_plots = false;
-Mdot_ox_plots = false;
+Mdot_ox_plots = true;
 Mdot_ipa_plots = false;
 Cv_CMD = false;
 controller_plots = false;
@@ -34,8 +34,11 @@ dataWf = readmatrix("IPA FF");
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
 t = dataWf(:, 1);
-dataF = movingavg(dataWf);
-dataF = dataF(1:rows, :);
+windowSize = 14;
+b = 1/windowSize * ones(1,windowSize);
+a = 1;
+
+dataF = filter(b, a, dataWf);
 
 %% Extract data
 angle_Mox = dataWf(:, 6) * 360;
