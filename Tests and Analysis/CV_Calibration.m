@@ -9,14 +9,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Curve fit V30 and V60 Valves
 addpath('.DATA\')
-V30 = [0:9:90;
-       0.00 0.05 0.118 0.236 0.405 0.624 0.880 1.200 1.550 1.954 2.380];
-V30C = polyfit(V30(1,:), V30(2,:), 3);
+IPA_Cv = [0    6.0000   12.0000   18.0000   24.0000   30.0000   36.0000   42.0000 ...
+          48.0000   54.0000   60.0000   66.0000   72.0000   78.0000   84.0000   90.0000;
+         0    0.0807    0.0812     0.0812     0.0812     0.1185     0.2065     0.3559 ...
+         0.5746     0.8635     1.2144     1.6087      2.0153     2.3885     2.6666      2.7699];
+IPA_Cv_C = polyfit(IPA_Cv(1,:), IPA_Cv(2,:), 4);
 
 
-V60 = [0:9:90;
-       0.00 0.07 0.161 0.378 0.670 1.000 1.450 2.050 2.780 3.710 4.960];
-V60C = polyfit(V60(1,:), V60(2,:), 3);
+OX_Cv = [0    6.0000   12.0000   18.0000   24.0000   30.0000   36.0000   42.0000 ...
+         48.0000   54.0000   60.0000   66.0000   72.0000   78.0000   84.0000   90.0000;
+         0    0.0857    0.0876     0.0876     0.0955     0.1574     0.2766    0.4583  ...
+         0.7002      0.9924    1.3173    1.6498      1.9571     2.1988     2.3269      2.3350];
+OX_Cv_C = polyfit(OX_Cv(1,:), OX_Cv(2,:), 4);
 
 TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
 %% Settings
@@ -29,12 +33,12 @@ Cv_CMD = false;
 controller_plots = false;
 
 %% Initialize data and filter
-dataWf = readmatrix("IPA FF");
+dataWf = readmatrix("LOX CL 1");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
 t = dataWf(:, 1);
-windowSize = 14;
+windowSize = 20;
 b = 1/windowSize * ones(1,windowSize);
 a = 1;
 
@@ -58,6 +62,8 @@ P_up_ipa = dataF(:, 20);
 P_dw_ipa = dataF(:, 21);
 P_diff_ipa = dataF(:, 22);
 Pc = dataF(:, 14);
+T_valve = dataF(:,18);
+T_valve = (T_valve - 273.15) * 1.8 + 32;
 
 OX_Integral = dataF(:, 26);
 IPA_Integral = dataF(:, 28);
@@ -72,15 +78,15 @@ rhoWat = 0.036;
 % Pressure estimations
 DPValveOX = max((P_up_ox - P_dw_ox), 1e-3);
 DPValveIPA = max((P_up_ipa - P_dw_ipa), 1e-3);
-rhoOX = 0.0455;
+rhoOX = 0.035;   
 rhoIPA = 0.02836; %49.06838 / 1728;
 
 cv2OX = mdot_ox / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoOX * rhoWat));
 cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoIPA * rhoWat));
 
 % Feeforward Controller
-C_d_IPA = 0.69;
-C_d_OX = 0.35;
+C_d_IPA = 0.6;
+C_d_OX = 0.43;
 A_if = 0.04031;       % 0.0498 OX || 0.04031 IPA;
 A_io = 0.0498;
 
@@ -156,21 +162,14 @@ if Cv_ox_plots == true
     CVcoef = polyfit(angle_Mox, cv2OX, 4);
     angles = 0:1:90;
     CVMODEL = polyval(CVcoef, angles);
-
-    % Make sure polynomial fit is always increasing
-    % for i = angles
-    %     upperbound = min(i + 2, length(angles));
-    %     CVMODEL(upperbound) = max(CVMODEL(i + 1), CVMODEL(upperbound));
-    % end
-
-    %CVMODEL2 = 2.50 ./ (1 + exp(-(angles - 58) / 11));
-    plot(angles, CVMODEL, 'm','LineWidth',1.5);
-    %plot(angles, CVMODEL2, 'r','LineWidth', 0.9);
-    legend('Estimated Cv', 'Angle to Cv Mapping');
+    CVMODEL2 = polyval(OX_Cv_C, angles);
+    plot(angles, CVMODEL, 'g','LineWidth',1);
+    plot(angles, CVMODEL2, 'r','LineWidth', 1);
+    legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
     title('Cv Comparaison OX')
     hold off;
     fprintf("Interpolation Table for LOX Cv: \n")
-    disp([0:6:90; CVMODEL(1:6:91)]);
+    disp([25:5:80; CVMODEL(26:5:81)]);
        
     % Plot CMD angle vs Measured Angle
     figure;
@@ -194,9 +193,10 @@ if Cv_ipa_plots == true
     CVcoef = polyfit(angle_Mipa, cv2IPA, 5);
     angles = 0:1:90;
     CVMODEL = polyval(CVcoef, 0:1:90);
-
-    plot(0:1:90, CVMODEL, 'm','LineWidth',1.5);
-    legend('Estimated Cv', 'Angle to Cv Mapping');
+    CVMODEL2 = polyval(IPA_Cv_C, angles);
+    plot(angles, CVMODEL, 'g','LineWidth',1);
+    plot(angles, CVMODEL2, 'r','LineWidth',1);
+    legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
     title('Cv Comparaison IPA')
     hold off
     fprintf("Interpolation Table for IPA Cv: \n")
