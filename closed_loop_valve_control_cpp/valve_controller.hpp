@@ -15,11 +15,11 @@ struct Venturi {
 };
 
 struct Fluid_Line {
-  double tank_pressure;             // psi
-  double venturi_upstream_pressure; // psi
-  double venturi_throat_pressure;   // psi
-  double venturi_temperature;       // K
-  double valve_temperature;         // K
+  float valve_upstream_pressure;       // psi
+  float valve_downstream_pressure;     // psi
+  float venturi_differential_pressure; // psi
+  float venturi_temperature;           // K
+  float valve_temperature;             // K
 };
 
 struct Sensor_Data {
@@ -28,8 +28,8 @@ struct Sensor_Data {
   Fluid_Line ipa;
 };
 
-void open_loop_thrust_control(double thrust, Sensor_Data sensor_data, double *angle_ox, double *angle_ipa);
-void open_loop_thrust_control_defaults(double thrust, double *angle_ox, double *angle_ipa);
+void open_loop_thrust_control(double thrust, double ox_valve_upstream, double ipa_valve_upstream, double *angle_ox, double *angle_ipa);
 void closed_loop_thrust_control(double thrust, double time_delta, double mfr_ox, double mfr_ipa, double chamber_pressure_sensor,
-                                double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum, double *angle_ox, double *angle_ipa);
+                                double ox_valve_upstream, double ipa_valve_upstream, double *cp_err_sum, double *ox_err_sum, double *ipa_err_sum,
+                                double *angle_ox, double *angle_ipa);
 #endif

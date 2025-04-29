@@ -4,8 +4,8 @@
 // MEX gateway function
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   // Check number of inputs
-  if (nrhs != 5) {
-    mexErrMsgIdAndTxt("MATLAB:myFunction:nrhs", "5 inputs required.");
+  if (nrhs != 7) {
+    mexErrMsgIdAndTxt("MATLAB:myFunction:nrhs", "7 inputs required.");
   }
 
   // Check number of outputs
@@ -23,6 +23,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double *mfr_ipa = mxGetPr(prhs[3]);
   double *chamber_pressure_sensor = mxGetPr(prhs[4]);
 
+  double *lox_valve_upstream_pressure = mxGetPr(prhs[5]);
+  double *ipa_valve_upstream_pressure = mxGetPr(prhs[6]);
+
   // Create output variables
   plhs[0] = mxCreateDoubleScalar(0); // First output (y1)
   plhs[1] = mxCreateDoubleScalar(0); // Second output (y2)
@@ -31,6 +34,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double *ox_angle = mxGetPr(plhs[0]);
   double *ipa_angle = mxGetPr(plhs[1]);
 
-  closed_loop_thrust_control(*thrust, *time_delta, *mfr_ox, *mfr_ipa, *chamber_pressure_sensor,
+  closed_loop_thrust_control(*thrust, *time_delta, *mfr_ox, *mfr_ipa, *chamber_pressure_sensor, *lox_valve_upstream_pressure, *ipa_valve_upstream_pressure,
                              &cp_err_sum, &ox_err_sum, &ipa_err_sum, ox_angle, ipa_angle);
 }
