@@ -25,15 +25,15 @@ OX_Cv_C = polyfit(OX_Cv(1,:), OX_Cv(2,:), 4);
 TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
 %% Settings
 
-Cv_ox_plots = true;
+Cv_ox_plots = false;
 Cv_ipa_plots = false;
-Mdot_ox_plots = true;
-Mdot_ipa_plots = false;
+Mdot_ox_plots = false;
+Mdot_ipa_plots = true;
 Cv_CMD = false;
 controller_plots = false;
 
 %% Initialize data and filter
-dataWf = readmatrix("LOX CL 1");
+dataWf = readmatrix("IPA CL 2");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -85,8 +85,8 @@ cv2OX = mdot_ox / 231 * 60 .* sqrt(1 ./ (DPValveOX * rhoOX * rhoWat));
 cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoIPA * rhoWat));
 
 % Feeforward Controller
-C_d_IPA = 0.6;
-C_d_OX = 0.43;
+C_d_IPA = 0.69;
+C_d_OX = 0.44;
 A_if = 0.04031;       % 0.0498 OX || 0.04031 IPA;
 A_io = 0.0498;
 
@@ -169,7 +169,16 @@ if Cv_ox_plots == true
     title('Cv Comparaison OX')
     hold off;
     fprintf("Interpolation Table for LOX Cv: \n")
-    disp([25:5:80; CVMODEL(26:5:81)]);
+    fprintf("{{")
+    for i = 25:5:80
+        fprintf("%d, ", i);
+    end
+    fprintf("}\n{");
+    for i = 26:5:81
+        fprintf("%.3f, ", CVMODEL(i));
+    end
+    fprintf("}}\n");
+    %disp([25:5:80; CVMODEL(26:5:81)]);
        
     % Plot CMD angle vs Measured Angle
     figure;
@@ -200,7 +209,16 @@ if Cv_ipa_plots == true
     title('Cv Comparaison IPA')
     hold off
     fprintf("Interpolation Table for IPA Cv: \n")
-    disp([0:6:90; CVMODEL(1:6:91)]);
+    fprintf("{{")
+    for i = 25:5:75
+        fprintf("%d, ", i);
+    end
+    fprintf("}\n{");
+    for i = 26:5:76
+        fprintf("%.3f, ", CVMODEL(i));
+    end
+    fprintf("}}\n");
+    %disp([0:6:90; CVMODEL(1:6:91)]);
  
     %% Plot CMD angle vs Measured Angle
     figure;
