@@ -23,17 +23,23 @@ OX_Cv = [0    6.0000   12.0000   18.0000   24.0000   30.0000   36.0000   42.0000
 OX_Cv_C = polyfit(OX_Cv(1,:), OX_Cv(2,:), 4);
 
 TADPOLECv = [-2.3765e-07   3.7436e-05  -1.3222e-3   0.015629   0];
+
+cf_table = [
+        120, 242;
+        1.08, 1.347
+    ];
 %% Settings
 
-Cv_ox_plots = false;
-Cv_ipa_plots = false;
-Mdot_ox_plots = false;
+Cv_ox_plots = true;
+Cv_ipa_plots = true;
+Mdot_ox_plots = true;
 Mdot_ipa_plots = true;
 Cv_CMD = false;
 controller_plots = false;
+hotfire_plots = true;
 
 %% Initialize data and filter
-dataWf = readmatrix("IPA CL 2");
+dataWf = readmatrix("HOTFIRE 6");
 
 rows = size(dataWf, 1);
 cols = size(dataWf, 2);
@@ -54,6 +60,7 @@ mdot_ox = dataF(:, 29);
 mdot_ipa = dataF(:, 30);
 mdot_trg_ox = dataWf(:, 31);
 mdot_trg_ipa = dataWf(:, 32);
+thrust_trg = dataWf(:, 3);
 
 P_up_ox = dataF(:, 15);
 P_dw_ox = dataF(:, 16);
@@ -64,6 +71,7 @@ P_diff_ipa = dataF(:, 22);
 Pc = dataF(:, 14);
 T_valve = dataF(:,18);
 T_valve = (T_valve - 273.15) * 1.8 + 32;
+OF = mdot_ox ./ mdot_ipa;
 
 OX_Integral = dataF(:, 26);
 IPA_Integral = dataF(:, 28);
@@ -86,12 +94,23 @@ cv2IPA = mdot_ipa / 231 * 60 .* sqrt(1 ./ (DPValveIPA  * rhoIPA * rhoWat));
 
 % Feeforward Controller
 C_d_IPA = 0.69;
-C_d_OX = 0.44;
+C_d_OX = 0.33;
 A_if = 0.04031;       % 0.0498 OX || 0.04031 IPA;
 A_io = 0.0498;
+A_t = 1.679; 
 
 DP_if = 1 / (2 * rhoIPA * g *(C_d_IPA * A_if)^2);
 DP_io = 1 / (2 * rhoOX * g *(C_d_OX * A_io)^2); 
+
+A_th = 0.066; A_in = 0.127;
+A_term = (A_th / A_in)^2;
+R = 10.731 / 28;
+rhoEST = P_up_ox ./ (R * T_valve) / 12^3;
+
+mdot_est = A_th * sqrt(2 * rhoOX .* P_diff_ox * g / (1 - A_term));
+CDA = mdot_ox ./ sqrt(P_diff_ox .* 2 .* rhoOX * g);
+CDA_nominal = 0.0786;
+CDAPct = (CDA - CDA_nominal) ./ CDA_nominal * 100;
 
 % APPROX CV MAPPING 
 alpha_OX = 2.50;
@@ -103,15 +122,21 @@ beta_IPA = 63;
 gamma_IPA = 10;
 
 % Feedforward
-DP = max(P_up_ox - Pc - (DP_io) * mdot_trg_ox .^2, 0);
-FF_ox = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoOX * rhoWat * DP));
+DPox = max(P_up_ox - Pc - (DP_io) * mdot_trg_ox .^2, 0);
+FF_ox = 60/231 * mdot_trg_ox .* sqrt(1 ./ (rhoOX * rhoWat * DPox));
 valve_ox = min(max(-gamma_OX * log(alpha_OX ./ FF_ox - 1) + beta_OX, 15), 90);
 
-DP = max(P_up_ipa - Pc - (DP_if) * mdot_trg_ipa .^2, 0);
-FF_ipa = 60/231 * mdot_trg_ipa .* sqrt(1 ./ (rhoIPA * rhoWat * DP));
+DPipa = max(P_up_ipa - Pc - (DP_if) * mdot_trg_ipa .^2, 0);
+FF_ipa = 60/231 * mdot_trg_ipa .* sqrt(1 ./ (rhoIPA * rhoWat * DPipa));
 valve_ipa = min(max(-gamma_IPA * log(alpha_IPA ./ FF_ipa - 1) + beta_IPA, 15), 90);
 
+% Quick thrust estimate
+thrust_est = cp_to_thrust(Pc);
+cstar = Pc * A_t * 32.174 ./ (mdot_ox + mdot_ipa);
+cstar_eff = cstar / 5432.4;
+
 %% Plots
+close all
 if Mdot_ox_plots == true
     figure;
     dt = t(end) / size(t, 1);
@@ -150,35 +175,35 @@ if Mdot_ipa_plots == true
     legend('Mass Flow', 'Target', 'High Bound', 'Low Bound');
 end
 if Cv_ox_plots == true
-    figure;
-    plot(angle_Mox, cv2OX, 'b-x', 'MarkerSize', 4);
-    xlim([0 90]);
-    ylim([0 4]);
-    xlabel('Valve Angle OX [deg]');
-    ylabel('Cv');
-    hold on; grid on;
-    
-    % Add a curve fit to local Cv to account for phase shift
-    CVcoef = polyfit(angle_Mox, cv2OX, 4);
-    angles = 0:1:90;
-    CVMODEL = polyval(CVcoef, angles);
-    CVMODEL2 = polyval(OX_Cv_C, angles);
-    plot(angles, CVMODEL, 'g','LineWidth',1);
-    plot(angles, CVMODEL2, 'r','LineWidth', 1);
-    legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
-    title('Cv Comparaison OX')
-    hold off;
-    fprintf("Interpolation Table for LOX Cv: \n")
-    fprintf("{{")
-    for i = 25:5:80
-        fprintf("%d, ", i);
-    end
-    fprintf("}\n{");
-    for i = 26:5:81
-        fprintf("%.3f, ", CVMODEL(i));
-    end
-    fprintf("}}\n");
-    %disp([25:5:80; CVMODEL(26:5:81)]);
+    % figure;
+    % plot(angle_Mox, cv2OX, 'b-x', 'MarkerSize', 4);
+    % xlim([0 90]);
+    % ylim([0 4]);
+    % xlabel('Valve Angle OX [deg]');
+    % ylabel('Cv');
+    % hold on; grid on;
+    % 
+    % % Add a curve fit to local Cv to account for phase shift
+    % CVcoef = polyfit(angle_Mox, cv2OX, 4);
+    % angles = 0:1:90;
+    % CVMODEL = polyval(CVcoef, angles);
+    % CVMODEL2 = polyval(OX_Cv_C, angles);
+    % plot(angles, CVMODEL, 'g','LineWidth',1);
+    % plot(angles, CVMODEL2, 'r','LineWidth', 1);
+    % legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
+    % title('Cv Comparaison OX')
+    % hold off;
+    % fprintf("Interpolation Table for LOX Cv: \n")
+    % fprintf("{{")
+    % for i = 25:5:80
+    %     fprintf("%d, ", i);
+    % end
+    % fprintf("}\n{");
+    % for i = 26:5:81
+    %     fprintf("%.3f, ", CVMODEL(i));
+    % end
+    % fprintf("}}\n");
+    % %disp([25:5:80; CVMODEL(26:5:81)]);
        
     % Plot CMD angle vs Measured Angle
     figure;
@@ -190,35 +215,35 @@ if Cv_ox_plots == true
     legend('Commanded Angle', 'Measured Angle');
 end
 if Cv_ipa_plots == true
-    figure;
-    plot(angle_Mipa, cv2IPA, 'b-x', 'MarkerSize',5);
-    xlim([0 90]);
-    ylim([0 4]);
-    xlabel('Valve Angle IPA [deg]');
-    ylabel('Cv');
-    hold on; grid on;
-    
-    % Add a curve fit to local Cv to account for phase shift
-    CVcoef = polyfit(angle_Mipa, cv2IPA, 5);
-    angles = 0:1:90;
-    CVMODEL = polyval(CVcoef, 0:1:90);
-    CVMODEL2 = polyval(IPA_Cv_C, angles);
-    plot(angles, CVMODEL, 'g','LineWidth',1);
-    plot(angles, CVMODEL2, 'r','LineWidth',1);
-    legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
-    title('Cv Comparaison IPA')
-    hold off
-    fprintf("Interpolation Table for IPA Cv: \n")
-    fprintf("{{")
-    for i = 25:5:75
-        fprintf("%d, ", i);
-    end
-    fprintf("}\n{");
-    for i = 26:5:76
-        fprintf("%.3f, ", CVMODEL(i));
-    end
-    fprintf("}}\n");
-    %disp([0:6:90; CVMODEL(1:6:91)]);
+    % figure;
+    % plot(angle_Mipa, cv2IPA, 'b-x', 'MarkerSize',5);
+    % xlim([0 90]);
+    % ylim([0 4]);
+    % xlabel('Valve Angle IPA [deg]');
+    % ylabel('Cv');
+    % hold on; grid on;
+    % 
+    % % Add a curve fit to local Cv to account for phase shift
+    % CVcoef = polyfit(angle_Mipa, cv2IPA, 5);
+    % angles = 0:1:90;
+    % CVMODEL = polyval(CVcoef, 0:1:90);
+    % CVMODEL2 = polyval(IPA_Cv_C, angles);
+    % plot(angles, CVMODEL, 'g','LineWidth',1);
+    % plot(angles, CVMODEL2, 'r','LineWidth',1);
+    % legend('Estimated Cv', 'Local Angle to Cv Mapping', 'Data from Waterflows');
+    % title('Cv Comparaison IPA')
+    % hold off
+    % fprintf("Interpolation Table for IPA Cv: \n")
+    % fprintf("{{")
+    % for i = 25:5:75
+    %     fprintf("%d, ", i);
+    % end
+    % fprintf("}\n{");
+    % for i = 26:5:76
+    %     fprintf("%.3f, ", CVMODEL(i));
+    % end
+    % fprintf("}}\n");
+    % %disp([0:6:90; CVMODEL(1:6:91)]);
  
     %% Plot CMD angle vs Measured Angle
     figure;
@@ -249,4 +274,48 @@ if controller_plots == true
     title('Control Action');
     legend('Feedforward', 'Feedback Trim');
     hold off
+end
+if hotfire_plots == true
+    figure;
+    plot(t, OF, 'b', 'LineWidth', 1);
+    xlabel('Time (s)');
+    ylabel('OF Ratio');
+    ylim([1 1.5]);
+    yline(1.25, 'r--', 'LineWidth', 1.2)
+    grid on;
+
+    figure;
+    plot(t, Pc, 'r', 'LineWidth', 1);
+    xlabel('Time (s)');
+    ylabel('Pressure (psi)');
+    grid on;
+
+    figure;
+    plot(t, cstar, 'b', 'LineWidth', 1);
+    xlabel('Time (s)');
+    ylabel('Cstar Efficiency (%)');
+    grid on;
+    ylim([0 6000]);
+
+    figure; grid on; hold on;
+    dt = t(end) / size(t, 1);
+    tpast = [thrust_trg(1:floor(0.5 / dt)); thrust_trg];
+    tpast = tpast(1:end-floor(0.5 / dt));
+    tfut = [thrust_trg; thrust_trg(end-floor(0.5 / dt):end)];
+    tfut = tfut(floor(0.5 / dt):end);
+    t_start_idx = find(t > 4, 1);
+    t_start_2 = find(t > 5, 1);
+    high_bound = max(tpast, tfut(1:size(t, 1))) + max(thrust_trg) * 0.05;
+    low_bound = min(tpast, tfut(1:size(t, 1))) - max(thrust_trg) * 0.05;
+    low_bound(1:t_start_2) = 590 * 0.95;
+    plot(t(t_start_idx:end), thrust_trg(t_start_idx:end), 'b', 'LineWidth', 1); grid on; hold on;
+    plot(t, thrust_est, 'r', 'LineWidth', 1)
+    plot(t(t_start_idx:end), high_bound(t_start_idx:end), 'LineWidth', 1);
+    plot(t(t_start_idx:end), low_bound(t_start_idx:end), 'LineWidth', 1);
+    xlabel('Time [s]');
+    ylabel('Estimated Thrust [lbm/s]');
+    title('Thrust vs. Time');
+    xline(4, 'b--');
+    xline(20, 'g--');
+    legend('Target', 'Thrust', 'High Bound', 'Low Bound', 'End Transient', 'Shutdown');
 end

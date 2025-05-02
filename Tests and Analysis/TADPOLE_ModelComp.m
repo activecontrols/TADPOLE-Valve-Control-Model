@@ -43,8 +43,8 @@ P_atm = 14.696; %psi
 
 x0 = [0 0 14.3 14.3 14.3 0 0];           
 
-ox_tank = 600;
-ipa_tank = 700;
+ox_tank = 707;
+ipa_tank = 660;
 [t2, x2] = ode45(@(t2, x2) nonlinear_plant2(x2, (t2 > 2) * angle_ox, (t2 > 2) * angle_ipa, t2, 0), tspan, x0(1:5));
 [t3, x3] = ode45(@(t3, x3) nonlinear_plant3(x3, (t3 > 2) * angle_ox, (t3 > 2) * angle_ipa, t3, 0, ox_tank, ipa_tank), tspan, x0);
 

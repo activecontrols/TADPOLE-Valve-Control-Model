@@ -38,8 +38,8 @@ function [valve_ox, valve_ipa] = mdot2valves(mdot_ox, mdot_ipa, chamber_pressure
     ipa_density = 49.06838 / 1728; % lbs / in^3
     h2o_density = 0.0361; %lbs / in^3
     g = 32.174 * 12;
-    C_do = 0.56;
-    C_di = 0.72;
+    C_do = 0.445;
+    C_di = 0.7;
     A_if = 0.04031006898;                   %in^2
     A_io = 0.04875965463;                   %in^2
 

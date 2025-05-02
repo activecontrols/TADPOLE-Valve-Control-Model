@@ -15,15 +15,15 @@ noise_var_mdot = 1e-20; %1e-5;
 noise_var_pout = 1e-20; %0.75e-2;
 
 timeDelta = 1/5000;         % seconds
-timeDeltaCMD = 1/1000;       % seconds
-timeDeltaOUT = 1/200;        % seconds
+timeDeltaCMD = 1/1000;      % seconds
+timeDeltaOUT = 1/200;       % seconds
 
 deadtime_mdot = 0.02;       % seconds
 deadtime_Pc = 0.05;         % seconds
 deadtime_valve = 0.35;      % seconds
 
-ox_tank = 600;              % psi
-ipa_tank = 700;             % psi
+ox_tank = 800;              % psi
+ipa_tank = 800;             % psi
 
 % Manifold pressure data for display tests
 ox_manifold_table = [
